@@ -1,0 +1,107 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../providers/dame_de_pique_provider.dart';
+
+class DdpSetupScreen extends ConsumerStatefulWidget {
+  const DdpSetupScreen({super.key});
+
+  @override
+  ConsumerState<DdpSetupScreen> createState() => _DdpSetupScreenState();
+}
+
+class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
+  final _controllers = List.generate(
+    4,
+    (i) => TextEditingController(text: 'Joueur ${i + 1}'),
+  );
+  final _thresholdCtrl = TextEditingController(text: '100');
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    _thresholdCtrl.dispose();
+    super.dispose();
+  }
+
+  void _startGame() {
+    final players = List.generate(
+      4,
+      (i) => _controllers[i].text.trim().isEmpty
+          ? 'Joueur ${i + 1}'
+          : _controllers[i].text.trim(),
+    );
+    final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
+    ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
+    context.go('/dame-de-pique/round');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Dame de Pique — Configuration')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text('Joueurs',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ...List.generate(4, (i) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: TextFormField(
+                  controller: _controllers[i],
+                  decoration: InputDecoration(
+                    labelText: 'Joueur ${i + 1}',
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Seuil de fin de partie',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(
+                      'La partie s\'arrête quand un joueur atteint ce score.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _thresholdCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Score seuil',
+                        suffixText: 'points',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Commencer la partie'),
+              onPressed: _startGame,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
