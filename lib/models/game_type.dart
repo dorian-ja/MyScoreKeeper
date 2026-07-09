@@ -59,4 +59,15 @@ enum GameType {
         return '♠️';
     }
   }
+
+  String get imagePath {
+    switch (this) {
+      case GameType.skullKing:
+        return 'assets/images/game_skull_king.png';
+      case GameType.tichu:
+        return 'assets/images/game_tichu.png';
+      case GameType.dameDepique:
+        return 'assets/images/game_dame_de_pique.png';
+    }
+  }
 }

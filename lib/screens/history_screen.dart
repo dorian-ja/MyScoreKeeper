@@ -78,8 +78,15 @@ class _HistoryTile extends StatelessWidget {
           child: ListTile(
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: Text(entry.gameType.emoji,
-                style: const TextStyle(fontSize: 28)),
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                entry.gameType.imagePath,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
+            ),
             title: Text(
               entry.gameType.displayName,
               style: const TextStyle(fontWeight: FontWeight.bold),
