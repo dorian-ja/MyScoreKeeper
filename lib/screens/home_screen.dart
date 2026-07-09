@@ -40,6 +40,8 @@ class HomeScreen extends StatelessWidget {
                     _GameCard(game: GameType.tichu),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.dameDepique),
+                    const SizedBox(height: 12),
+                    _GameCard(game: GameType.autre),
                     const SizedBox(height: 24),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.history),
@@ -76,6 +78,8 @@ class _GameCard extends StatelessWidget {
         return '/tichu/setup';
       case GameType.dameDepique:
         return '/dame-de-pique/setup';
+      case GameType.autre:
+        return '/autre/setup';
     }
   }
 

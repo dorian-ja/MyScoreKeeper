@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 enum GameType {
   skullKing,
   tichu,
-  dameDepique;
+  dameDepique,
+  autre;
 
   String get displayName {
     switch (this) {
@@ -13,6 +14,8 @@ enum GameType {
         return 'Tichu';
       case GameType.dameDepique:
         return 'Dame de Pique';
+      case GameType.autre:
+        return 'Autre';
     }
   }
 
@@ -24,6 +27,8 @@ enum GameType {
         return '4 joueurs • 2 équipes';
       case GameType.dameDepique:
         return '4 joueurs • cartes';
+      case GameType.autre:
+        return 'Comptage de points personnalisé';
     }
   }
 
@@ -35,6 +40,8 @@ enum GameType {
         return Icons.style;
       case GameType.dameDepique:
         return Icons.favorite;
+      case GameType.autre:
+        return Icons.plus_one;
     }
   }
 
@@ -46,6 +53,8 @@ enum GameType {
         return const Color(0xFF9C4A1E); // orange brûlé du dragon
       case GameType.dameDepique:
         return const Color(0xFF2B2118); // encre/noir de la dame de pique
+      case GameType.autre:
+        return const Color(0xFF6E624C); // taupe de l'icône
     }
   }
 
@@ -57,6 +66,8 @@ enum GameType {
         return '🎴';
       case GameType.dameDepique:
         return '♠️';
+      case GameType.autre:
+        return '➕';
     }
   }
 
@@ -68,6 +79,8 @@ enum GameType {
         return 'assets/images/game_tichu.png';
       case GameType.dameDepique:
         return 'assets/images/game_dame_de_pique.png';
+      case GameType.autre:
+        return 'assets/images/game_autre.png';
     }
   }
 }

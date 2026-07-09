@@ -176,6 +176,8 @@ class _RoundCard extends StatelessWidget {
         return _TichuRound(data: roundData, players: entry.playerOrTeamNames);
       case 'dameDepique':
         return _DdpRound(data: roundData, players: entry.playerOrTeamNames);
+      case 'autre':
+        return _GenericRound(data: roundData, players: entry.playerOrTeamNames);
       default:
         return Text(roundData.toString());
     }
@@ -242,6 +244,29 @@ class _DdpRound extends StatelessWidget {
     return Column(
       children: players.map((p) {
         final pts = penalties[p] ?? 0;
+        return Row(
+          children: [
+            Expanded(child: Text(p)),
+            Text('$pts pts',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _GenericRound extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final List<String> players;
+  const _GenericRound({required this.data, required this.players});
+
+  @override
+  Widget build(BuildContext context) {
+    final scores = Map<String, int>.from(data['scores'] as Map? ?? {});
+    return Column(
+      children: players.map((p) {
+        final pts = scores[p] ?? 0;
         return Row(
           children: [
             Expanded(child: Text(p)),
