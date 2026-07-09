@@ -18,13 +18,21 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
   late Map<String, TextEditingController> _penaltyControllers;
   bool _initialized = false;
 
+  static const int _totalPointsPerRound = 26;
+
   void _init(DdpGameState state) {
     if (_initialized) return;
     _penaltyControllers = {
-      for (final p in state.players) p: TextEditingController(text: '0')
+      for (final p in state.players)
+        p: TextEditingController(text: '0')..addListener(() => setState(() {}))
     };
     _initialized = true;
   }
+
+  int _currentSum(DdpGameState state) => state.players.fold<int>(
+      0,
+      (sum, p) =>
+          sum + (int.tryParse(_penaltyControllers[p]?.text ?? '0') ?? 0));
 
   @override
   void dispose() {
@@ -171,6 +179,22 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                         ),
                       );
                     }),
+                    const SizedBox(height: 4),
+                    Builder(builder: (context) {
+                      final sum = _currentSum(state);
+                      final ok = sum == _totalPointsPerRound;
+                      final color = ok
+                          ? Colors.green
+                          : Theme.of(context).colorScheme.error;
+                      return Text(
+                        'Total distribué : $sum / $_totalPointsPerRound pts',
+                        textAlign: TextAlign.right,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: color, fontWeight: FontWeight.w600),
+                      );
+                    }),
                   ] else ...[
                     const SizedBox(height: 12),
                     Card(
@@ -207,7 +231,10 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
               child: FilledButton.icon(
                 icon: const Icon(Icons.check),
                 label: const Text('Valider la manche'),
-                onPressed: () => _submit(state),
+                onPressed: (_moonShooter == null &&
+                        _currentSum(state) != _totalPointsPerRound)
+                    ? null
+                    : () => _submit(state),
                 style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(50)),
               ),
