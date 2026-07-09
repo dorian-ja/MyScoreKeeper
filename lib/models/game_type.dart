@@ -54,7 +54,7 @@ enum GameType {
       case GameType.dameDepique:
         return const Color(0xFF2B2118); // encre/noir de la dame de pique
       case GameType.autre:
-        return const Color(0xFF6E624C); // taupe de l'icône
+        return const Color(0xFF305868); // bleu-gris de l'icône
     }
   }
 
