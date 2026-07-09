@@ -13,6 +13,9 @@ import 'screens/tichu/tichu_scoreboard_screen.dart';
 import 'screens/dame_de_pique/ddp_setup_screen.dart';
 import 'screens/dame_de_pique/ddp_round_screen.dart';
 import 'screens/dame_de_pique/ddp_scoreboard_screen.dart';
+import 'screens/generic/generic_setup_screen.dart';
+import 'screens/generic/generic_round_screen.dart';
+import 'screens/generic/generic_scoreboard_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -60,5 +63,14 @@ final appRouter = GoRouter(
     GoRoute(
         path: '/dame-de-pique/scoreboard',
         builder: (_, __) => const DdpScoreboardScreen()),
+
+    // Autre (générique)
+    GoRoute(
+        path: '/autre/setup', builder: (_, __) => const GenericSetupScreen()),
+    GoRoute(
+        path: '/autre/round', builder: (_, __) => const GenericRoundScreen()),
+    GoRoute(
+        path: '/autre/scoreboard',
+        builder: (_, __) => const GenericScoreboardScreen()),
   ],
 );
