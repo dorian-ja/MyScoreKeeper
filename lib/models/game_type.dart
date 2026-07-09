@@ -41,11 +41,11 @@ enum GameType {
   Color get color {
     switch (this) {
       case GameType.skullKing:
-        return const Color(0xFF1A237E);
+        return const Color(0xFF6E6B45); // olive de l'icône
       case GameType.tichu:
-        return const Color(0xFF1B5E20);
+        return const Color(0xFF9C4A1E); // orange brûlé du dragon
       case GameType.dameDepique:
-        return const Color(0xFFB71C1C);
+        return const Color(0xFF2B2118); // encre/noir de la dame de pique
     }
   }
 
