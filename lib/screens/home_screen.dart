@@ -94,18 +94,13 @@ class _GameCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: game.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    game.emoji,
-                    style: const TextStyle(fontSize: 28),
-                  ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  game.imagePath,
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.cover,
                 ),
               ),
               const SizedBox(width: 16),
