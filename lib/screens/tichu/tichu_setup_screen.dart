@@ -6,6 +6,7 @@ import '../../models/game_type.dart';
 import '../../models/tichu_state.dart';
 import '../../providers/tichu_provider.dart';
 import '../../services/player_names_store.dart';
+import '../../utils/player_names.dart';
 import '../../theme.dart';
 
 class TichuSetupScreen extends ConsumerStatefulWidget {
@@ -56,12 +57,10 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
   }
 
   void _startGame() {
-    final players = List.generate(
-      _totalPlayers,
-      (i) => _controllers[i].text.trim().isEmpty
-          ? 'Joueur ${i + 1}'
-          : _controllers[i].text.trim(),
-    );
+    final players = resolvePlayerNames([
+      for (var i = 0; i < _totalPlayers; i++) _controllers[i].text,
+    ]);
+    if (!ensureUniqueNames(context, players)) return;
     final target = int.tryParse(_targetCtrl.text) ?? 1000;
     ref.read(tichuProvider.notifier).startGame(players, target, _mode);
     context.go('/tichu/round');

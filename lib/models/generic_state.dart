@@ -76,16 +76,23 @@ class GenericGameState {
   GenericGameState copyWith({
     List<String>? players,
     bool? higherWins,
-    int? maxScore,
-    int? maxRounds,
+    // Sentinelle pour distinguer « non fourni » d'une remise à null explicite.
+    Object? maxScore = _unset,
+    Object? maxRounds = _unset,
     GenericPhase? phase,
     List<GenericRoundData>? completedRounds,
   }) => GenericGameState(
     players: players ?? this.players,
     higherWins: higherWins ?? this.higherWins,
-    maxScore: maxScore ?? this.maxScore,
-    maxRounds: maxRounds ?? this.maxRounds,
+    maxScore: identical(maxScore, _unset) ? this.maxScore : maxScore as int?,
+    maxRounds: identical(maxRounds, _unset)
+        ? this.maxRounds
+        : maxRounds as int?,
     phase: phase ?? this.phase,
     completedRounds: completedRounds ?? this.completedRounds,
   );
 }
+
+/// Marqueur interne : un argument `copyWith` laissé à cette valeur signifie
+/// « ne pas modifier », ce qui permet de passer `null` explicitement.
+const Object _unset = Object();

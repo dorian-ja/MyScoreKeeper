@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../providers/history_provider.dart';
@@ -14,6 +16,119 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   GameType? _filter; // null = tous les jeux
+
+  Future<void> _export() async {
+    final json = ref.read(historyProvider.notifier).exportJson();
+    try {
+      await SharePlus.instance.share(
+        ShareParams(text: json, subject: 'My Score Keeper — historique'),
+      );
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: json));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Historique copié dans le presse-papiers'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _import() async {
+    final controller = TextEditingController();
+    final raw = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Importer un historique'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Collez ci-dessous le contenu d\'un export. Les parties déjà '
+              'présentes ne seront pas dupliquées.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: '[ … ]',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.paste),
+                  tooltip: 'Coller',
+                  onPressed: () async {
+                    final data = await Clipboard.getData(Clipboard.kTextPlain);
+                    if (data?.text != null) controller.text = data!.text!;
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Importer'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (raw == null || raw.isEmpty) return;
+
+    String message;
+    try {
+      final entries = HistoryNotifier.parseExport(raw);
+      if (entries.isEmpty) {
+        message = 'Aucune partie valide trouvée dans le texte fourni.';
+      } else {
+        final added = await ref
+            .read(historyProvider.notifier)
+            .importEntries(entries);
+        message = added == 0
+            ? 'Toutes ces parties étaient déjà présentes.'
+            : '$added partie${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}.';
+      }
+    } catch (_) {
+      message = 'Format invalide : impossible de lire ce texte.';
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _confirmClearAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tout effacer ?'),
+        content: const Text(
+          'Toutes les parties sauvegardées seront supprimées définitivement. '
+          'Pensez à exporter d\'abord si vous voulez les conserver.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Tout effacer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(historyProvider.notifier).clearAll();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +145,50 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Statistiques',
             onPressed: () => context.push('/stats'),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Plus d\'options',
+            onSelected: (value) {
+              switch (value) {
+                case 'export':
+                  _export();
+                case 'import':
+                  _import();
+                case 'clear':
+                  _confirmClearAll();
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'export',
+                enabled: history.isNotEmpty,
+                child: const ListTile(
+                  leading: Icon(Icons.ios_share),
+                  title: Text('Exporter'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'import',
+                child: ListTile(
+                  leading: Icon(Icons.file_download_outlined),
+                  title: Text('Importer'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'clear',
+                enabled: history.isNotEmpty,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete_sweep_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: const Text('Tout effacer'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -151,6 +310,7 @@ class _HistoryTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
+                semanticLabel: entry.gameType.displayName,
               ),
             ),
             title: Text(

@@ -105,27 +105,18 @@ class SkGameState {
     return sorted;
   }
 
-  /// Calcule le score prévisible d'un joueur avec des valeurs non encore soumises
+  /// Calcule le score prévisible d'un joueur avec des valeurs non encore
+  /// soumises. Délègue à [SkRoundData.scoreForPlayer] pour garantir que
+  /// l'estimé affiché correspond toujours au score réellement enregistré.
   int previewScore(String player, int tricks, int bonus, bool boulet) {
-    final bid = currentBids[player] ?? 0;
-    final diff = (bid - tricks).abs();
-
-    if (scoringMode == SkScoringMode.skullKing) {
-      if (bid == 0) {
-        return tricks == 0 ? 10 * currentRound : -10 * currentRound;
-      } else if (bid == tricks) {
-        return 20 * bid + bonus;
-      } else {
-        return -10 * diff;
-      }
-    } else {
-      final basePerCard = boulet ? 15 : 10;
-      if (diff == 0) return basePerCard * currentRound + bonus;
-      if (diff == 1 && !boulet) {
-        return (basePerCard * currentRound) ~/ 2 + bonus ~/ 2;
-      }
-      return 0;
-    }
+    final round = SkRoundData(
+      round: currentRound,
+      bids: {player: currentBids[player] ?? 0},
+      tricksWon: {player: tricks},
+      bonuses: {player: bonus},
+      isBoulet: {player: boulet},
+    );
+    return round.scoreForPlayer(player, scoringMode);
   }
 
   Map<String, dynamic> toJson() => {

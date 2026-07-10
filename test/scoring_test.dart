@@ -5,6 +5,8 @@ import 'package:my_score_keeper/models/game_type.dart';
 import 'package:my_score_keeper/models/generic_state.dart';
 import 'package:my_score_keeper/models/skull_king_state.dart';
 import 'package:my_score_keeper/models/tichu_state.dart';
+import 'package:my_score_keeper/screens/stats_screen.dart';
+import 'package:my_score_keeper/utils/player_names.dart';
 
 void main() {
   group('Skull King — scoring classique', () {
@@ -235,6 +237,74 @@ void main() {
       );
       expect(unlimited.hasReachedMaxScore, false);
       expect(unlimited.hasReachedMaxRounds, false);
+    });
+  });
+
+  group('Noms de joueurs', () {
+    test('champ vide remplacé par « Joueur N »', () {
+      expect(resolvePlayerNames(['Alice', '', '  ', 'Bob']), [
+        'Alice',
+        'Joueur 2',
+        'Joueur 3',
+        'Bob',
+      ]);
+    });
+
+    test('détection de doublon insensible à la casse', () {
+      expect(firstDuplicateName(['Alice', 'Bob']), isNull);
+      expect(firstDuplicateName(['Marie', 'marie']), 'marie');
+      expect(firstDuplicateName(['A', 'B', 'A']), 'A');
+    });
+  });
+
+  group('Statistiques joueurs', () {
+    GameHistoryEntry game(
+      String id,
+      DateTime at,
+      List<String> players,
+      String winner, {
+      GameType type = GameType.skullKing,
+    }) => GameHistoryEntry(
+      id: id,
+      gameType: type,
+      playedAt: at,
+      playerOrTeamNames: players,
+      winner: winner,
+      finalScores: {for (final p in players) p: 0},
+      rounds: const [],
+    );
+
+    test('victoires, séries et victoires par jeu', () {
+      // Ordre volontairement décroissant (comme l'historique réel).
+      final history = [
+        game('3', DateTime(2026, 1, 3), ['A', 'B'], 'B'),
+        game('2', DateTime(2026, 1, 2), ['A', 'B'], 'A'),
+        game('1', DateTime(2026, 1, 1), ['A', 'B'], 'A'),
+      ];
+      final stats = computePlayerStats(history);
+      final a = stats.firstWhere((s) => s.name == 'A');
+      final b = stats.firstWhere((s) => s.name == 'B');
+
+      expect(a.played, 3);
+      expect(a.wins, 2);
+      expect(a.bestStreak, 2); // deux premières parties gagnées d'affilée
+      expect(a.winsByGame[GameType.skullKing], 2);
+
+      expect(b.wins, 1);
+      expect(b.bestStreak, 1);
+
+      // Classement : A (2 victoires) avant B (1 victoire).
+      expect(stats.first.name, 'A');
+    });
+
+    test('trois victoires consécutives : série de 3', () {
+      final history = [
+        game('1', DateTime(2026, 1, 1), ['A'], 'A'),
+        game('2', DateTime(2026, 1, 2), ['A'], 'A'),
+        game('3', DateTime(2026, 1, 3), ['A'], 'A'),
+      ];
+      final stats = computePlayerStats(history);
+      expect(stats.first.bestStreak, 3);
     });
   });
 

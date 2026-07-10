@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/game_type.dart';
 import '../../providers/dame_de_pique_provider.dart';
 import '../../services/player_names_store.dart';
+import '../../utils/player_names.dart';
 
 class DdpSetupScreen extends ConsumerStatefulWidget {
   const DdpSetupScreen({super.key});
@@ -46,12 +47,10 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
   }
 
   void _startGame() {
-    final players = List.generate(
-      4,
-      (i) => _controllers[i].text.trim().isEmpty
-          ? 'Joueur ${i + 1}'
-          : _controllers[i].text.trim(),
-    );
+    final players = resolvePlayerNames([
+      for (var i = 0; i < 4; i++) _controllers[i].text,
+    ]);
+    if (!ensureUniqueNames(context, players)) return;
     final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
     ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
     context.go('/dame-de-pique/round');

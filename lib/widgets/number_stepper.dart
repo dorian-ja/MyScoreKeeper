@@ -25,6 +25,7 @@ class NumberStepper extends StatelessWidget {
         _btn(
           context,
           Icons.remove,
+          'Diminuer',
           value > min,
           () => onChanged(value - 1),
           scheme,
@@ -42,6 +43,7 @@ class NumberStepper extends StatelessWidget {
         _btn(
           context,
           Icons.add,
+          'Augmenter',
           value < max,
           () => onChanged(value + 1),
           scheme,
@@ -53,26 +55,32 @@ class NumberStepper extends StatelessWidget {
   Widget _btn(
     BuildContext context,
     IconData icon,
+    String semanticLabel,
     bool enabled,
     VoidCallback onTap,
     ColorScheme scheme,
   ) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(size / 2),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: enabled
-              ? scheme.primaryContainer
-              : scheme.surfaceContainerHighest,
-        ),
-        child: Icon(
-          icon,
-          size: size * 0.5,
-          color: enabled ? scheme.onPrimaryContainer : scheme.outline,
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: semanticLabel,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(size / 2),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: enabled
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest,
+          ),
+          child: Icon(
+            icon,
+            size: size * 0.5,
+            color: enabled ? scheme.onPrimaryContainer : scheme.outline,
+          ),
         ),
       ),
     );

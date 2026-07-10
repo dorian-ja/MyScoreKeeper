@@ -45,6 +45,44 @@ class HistoryNotifier extends StateNotifier<List<GameHistoryEntry>> {
     await _save();
   }
 
+  /// Efface tout l'historique.
+  Future<void> clearAll() async {
+    state = [];
+    await _save();
+  }
+
+  /// Sérialise l'historique complet pour l'export/partage.
+  String exportJson() =>
+      jsonEncode(state.map((e) => e.toJson()).toList());
+
+  /// Fusionne des entrées importées, en ignorant celles dont l'id existe déjà.
+  /// Renvoie le nombre d'entrées réellement ajoutées.
+  Future<int> importEntries(List<GameHistoryEntry> entries) async {
+    final existingIds = state.map((e) => e.id).toSet();
+    final toAdd = entries.where((e) => !existingIds.contains(e.id)).toList();
+    if (toAdd.isEmpty) return 0;
+    state = [...toAdd, ...state]
+      ..sort((a, b) => b.playedAt.compareTo(a.playedAt));
+    await _save();
+    return toAdd.length;
+  }
+
+  /// Parse un JSON d'export en liste d'entrées. Les entrées corrompues ou d'un
+  /// format inconnu sont ignorées. Lève une exception si le JSON global est
+  /// invalide (n'est pas une liste).
+  static List<GameHistoryEntry> parseExport(String raw) {
+    final list = jsonDecode(raw) as List;
+    final entries = <GameHistoryEntry>[];
+    for (final e in list) {
+      try {
+        entries.add(
+          GameHistoryEntry.fromJson(Map<String, dynamic>.from(e as Map)),
+        );
+      } catch (_) {}
+    }
+    return entries;
+  }
+
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(

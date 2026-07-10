@@ -5,6 +5,7 @@ import '../../models/game_type.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../services/player_names_store.dart';
+import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
 
 class SkSetupScreen extends ConsumerStatefulWidget {
@@ -49,12 +50,10 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
   }
 
   void _startGame() {
-    final players = List.generate(
-      _playerCount,
-      (i) => _controllers[i].text.trim().isEmpty
-          ? 'Joueur ${i + 1}'
-          : _controllers[i].text.trim(),
-    );
+    final players = resolvePlayerNames([
+      for (var i = 0; i < _playerCount; i++) _controllers[i].text,
+    ]);
+    if (!ensureUniqueNames(context, players)) return;
     ref.read(skullKingProvider.notifier).startGame(players, _scoringMode);
     context.go('/skull-king/bid');
   }

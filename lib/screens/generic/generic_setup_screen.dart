@@ -7,6 +7,7 @@ import '../../models/generic_template.dart';
 import '../../providers/generic_provider.dart';
 import '../../services/generic_template_store.dart';
 import '../../services/player_names_store.dart';
+import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
 
 class GenericSetupScreen extends ConsumerStatefulWidget {
@@ -150,13 +151,18 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     });
   }
 
+  /// Désélectionne le template courant : appelé dès qu'un réglage est modifié
+  /// manuellement, pour éviter qu'un chip reste marqué « sélectionné » alors
+  /// que la configuration a divergé.
+  void _clearTemplateSelection() {
+    if (_selectedTemplate != null) _selectedTemplate = null;
+  }
+
   void _startGame() {
-    final players = List.generate(
-      _playerCount,
-      (i) => _nameControllers[i].text.trim().isEmpty
-          ? 'Joueur ${i + 1}'
-          : _nameControllers[i].text.trim(),
-    );
+    final players = resolvePlayerNames([
+      for (var i = 0; i < _playerCount; i++) _nameControllers[i].text,
+    ]);
+    if (!ensureUniqueNames(context, players)) return;
     final maxScore = _useMaxScore
         ? int.tryParse(_maxScoreCtrl.text) ?? 100
         : null;
@@ -269,8 +275,10 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                         ),
                       ],
                       selected: {_higherWins},
-                      onSelectionChanged: (s) =>
-                          setState(() => _higherWins = s.first),
+                      onSelectionChanged: (s) => setState(() {
+                        _higherWins = s.first;
+                        _clearTemplateSelection();
+                      }),
                     ),
                   ],
                 ),
@@ -291,7 +299,10 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                       value: _playerCount,
                       min: 2,
                       max: _maxPlayers,
-                      onChanged: (v) => setState(() => _playerCount = v),
+                      onChanged: (v) => setState(() {
+                        _playerCount = v;
+                        _clearTemplateSelection();
+                      }),
                     ),
                   ],
                 ),
@@ -311,7 +322,10 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                         'La partie s\'arrête quand un joueur l\'atteint.',
                       ),
                       value: _useMaxScore,
-                      onChanged: (v) => setState(() => _useMaxScore = v),
+                      onChanged: (v) => setState(() {
+                        _useMaxScore = v;
+                        _clearTemplateSelection();
+                      }),
                     ),
                     if (_useMaxScore)
                       TextFormField(
@@ -324,6 +338,8 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                           labelText: 'Score max',
                           suffixText: 'points',
                         ),
+                        onChanged: (_) =>
+                            setState(_clearTemplateSelection),
                       ),
                   ],
                 ),
@@ -343,7 +359,10 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                         'La partie s\'arrête après ce nombre de manches.',
                       ),
                       value: _useMaxRounds,
-                      onChanged: (v) => setState(() => _useMaxRounds = v),
+                      onChanged: (v) => setState(() {
+                        _useMaxRounds = v;
+                        _clearTemplateSelection();
+                      }),
                     ),
                     if (_useMaxRounds)
                       TextFormField(
@@ -356,6 +375,8 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                           labelText: 'Manches max',
                           suffixText: 'manches',
                         ),
+                        onChanged: (_) =>
+                            setState(_clearTemplateSelection),
                       ),
                   ],
                 ),
