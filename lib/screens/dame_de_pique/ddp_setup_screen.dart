@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/game_type.dart';
 import '../../providers/dame_de_pique_provider.dart';
+import '../../services/player_names_store.dart';
 
 class DdpSetupScreen extends ConsumerStatefulWidget {
   const DdpSetupScreen({super.key});
@@ -17,6 +19,22 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
     (i) => TextEditingController(text: 'Joueur ${i + 1}'),
   );
   final _thresholdCtrl = TextEditingController(text: '100');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastNames();
+  }
+
+  Future<void> _loadLastNames() async {
+    final names = await PlayerNamesStore.load(GameType.dameDepique.name);
+    if (!mounted || names == null || names.isEmpty) return;
+    setState(() {
+      for (var i = 0; i < names.length && i < 4; i++) {
+        _controllers[i].text = names[i];
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -47,8 +65,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Joueurs',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text('Joueurs', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...List.generate(4, (i) {
               return Padding(
@@ -70,8 +87,10 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Seuil de fin de partie',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Seuil de fin de partie',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       'La partie s\'arrête quand un joueur atteint ce score.',
@@ -81,9 +100,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                     TextFormField(
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText: 'Score seuil',
                         suffixText: 'points',

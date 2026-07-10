@@ -3,6 +3,7 @@ import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/history_detail_screen.dart';
+import 'screens/stats_screen.dart';
 import 'screens/skull_king/sk_setup_screen.dart';
 import 'screens/skull_king/sk_bid_screen.dart';
 import 'screens/skull_king/sk_result_screen.dart';
@@ -23,6 +24,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
+    GoRoute(path: '/stats', builder: (_, __) => const StatsScreen()),
     GoRoute(
       path: '/history/:id',
       builder: (_, state) =>
@@ -31,46 +33,53 @@ final appRouter = GoRouter(
 
     // Skull King
     GoRoute(
-        path: '/skull-king/setup',
-        builder: (_, __) => const SkSetupScreen()),
+      path: '/skull-king/setup',
+      builder: (_, __) => const SkSetupScreen(),
+    ),
+    GoRoute(path: '/skull-king/bid', builder: (_, __) => const SkBidScreen()),
     GoRoute(
-        path: '/skull-king/bid', builder: (_, __) => const SkBidScreen()),
+      path: '/skull-king/result',
+      builder: (_, __) => const SkResultScreen(),
+    ),
     GoRoute(
-        path: '/skull-king/result',
-        builder: (_, __) => const SkResultScreen()),
-    GoRoute(
-        path: '/skull-king/scoreboard',
-        builder: (_, __) => const SkScoreboardScreen()),
+      path: '/skull-king/scoreboard',
+      builder: (_, __) => const SkScoreboardScreen(),
+    ),
 
     // Tichu
+    GoRoute(path: '/tichu/setup', builder: (_, __) => const TichuSetupScreen()),
+    GoRoute(path: '/tichu/round', builder: (_, __) => const TichuRoundScreen()),
     GoRoute(
-        path: '/tichu/setup',
-        builder: (_, __) => const TichuSetupScreen()),
-    GoRoute(
-        path: '/tichu/round',
-        builder: (_, __) => const TichuRoundScreen()),
-    GoRoute(
-        path: '/tichu/scoreboard',
-        builder: (_, __) => const TichuScoreboardScreen()),
+      path: '/tichu/scoreboard',
+      builder: (_, __) => const TichuScoreboardScreen(),
+    ),
 
     // Dame de Pique
     GoRoute(
-        path: '/dame-de-pique/setup',
-        builder: (_, __) => const DdpSetupScreen()),
+      path: '/dame-de-pique/setup',
+      builder: (_, __) => const DdpSetupScreen(),
+    ),
     GoRoute(
-        path: '/dame-de-pique/round',
-        builder: (_, __) => const DdpRoundScreen()),
+      path: '/dame-de-pique/round',
+      builder: (_, __) => const DdpRoundScreen(),
+    ),
     GoRoute(
-        path: '/dame-de-pique/scoreboard',
-        builder: (_, __) => const DdpScoreboardScreen()),
+      path: '/dame-de-pique/scoreboard',
+      builder: (_, __) => const DdpScoreboardScreen(),
+    ),
 
     // Autre (générique)
     GoRoute(
-        path: '/autre/setup', builder: (_, __) => const GenericSetupScreen()),
+      path: '/autre/setup',
+      builder: (_, __) => const GenericSetupScreen(),
+    ),
     GoRoute(
-        path: '/autre/round', builder: (_, __) => const GenericRoundScreen()),
+      path: '/autre/round',
+      builder: (_, __) => const GenericRoundScreen(),
+    ),
     GoRoute(
-        path: '/autre/scoreboard',
-        builder: (_, __) => const GenericScoreboardScreen()),
+      path: '/autre/scoreboard',
+      builder: (_, __) => const GenericScoreboardScreen(),
+    ),
   ],
 );

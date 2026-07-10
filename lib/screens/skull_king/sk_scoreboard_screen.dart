@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../widgets/quit_game_button.dart';
+import '../../widgets/redirect_home.dart';
+import '../../widgets/scoreboard_actions.dart';
+import '../../widgets/winner_banner.dart';
 
 class SkScoreboardScreen extends ConsumerWidget {
   const SkScoreboardScreen({super.key});
@@ -11,6 +14,8 @@ class SkScoreboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(skullKingProvider);
+    if (state.phase == SkPhase.setup) return const RedirectHome();
+
     final isFinished = state.phase == SkPhase.finished;
     final ranked = state.rankedPlayers;
 
@@ -21,13 +26,15 @@ class SkScoreboardScreen extends ConsumerWidget {
           title: Text(
             isFinished
                 ? 'Skull King — Partie terminée'
-                : 'Skull King — Manche ${state.completedRounds.length}/${isFinished ? 10 : 10}',
+                : 'Skull King — Manche ${state.completedRounds.length}/10',
           ),
           automaticallyImplyLeading: false,
-          leading: QuitGameButton(onConfirm: () {
-            ref.read(skullKingProvider.notifier).reset();
-            context.go('/');
-          }),
+          leading: QuitGameButton(
+            onConfirm: () {
+              ref.read(skullKingProvider.notifier).reset();
+              context.go('/');
+            },
+          ),
         ),
         body: SafeArea(
           child: Column(
@@ -37,7 +44,7 @@ class SkScoreboardScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (isFinished) ...[
-                      _WinnerBanner(winner: ranked.first),
+                      WinnerBanner(winner: ranked.first),
                       const SizedBox(height: 16),
                     ],
                     _ScoreTable(state: state),
@@ -55,90 +62,31 @@ class SkScoreboardScreen extends ConsumerWidget {
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: isFinished
-                    ? Column(
-                        children: [
-                          FilledButton.icon(
-                            icon: const Icon(Icons.save_outlined),
-                            label: const Text('Sauvegarder la partie'),
-                            onPressed: () async {
-                              await ref
-                                  .read(skullKingProvider.notifier)
-                                  .saveToHistory();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Partie sauvegardée !')),
-                                );
-                              }
-                            },
-                            style: FilledButton.styleFrom(
-                                minimumSize: const Size.fromHeight(50)),
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.home_outlined),
-                            label: const Text('Retour à l\'accueil'),
-                            onPressed: () {
-                              ref.read(skullKingProvider.notifier).reset();
-                              context.go('/');
-                            },
-                            style: OutlinedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(50)),
-                          ),
-                        ],
-                      )
-                    : FilledButton.icon(
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Manche suivante'),
-                        onPressed: () {
-                          ref.read(skullKingProvider.notifier).nextRound();
-                          context.go('/skull-king/bid');
-                        },
-                        style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50)),
-                      ),
+                child: ScoreboardActions(
+                  isFinished: isFinished,
+                  canUndo: state.completedRounds.isNotEmpty,
+                  onNextRound: () {
+                    ref.read(skullKingProvider.notifier).nextRound();
+                    context.go('/skull-king/bid');
+                  },
+                  onUndoRound: () {
+                    ref.read(skullKingProvider.notifier).undoLastRound();
+                    context.go('/skull-king/bid');
+                  },
+                  onSave: () =>
+                      ref.read(skullKingProvider.notifier).saveToHistory(),
+                  onHome: () {
+                    ref.read(skullKingProvider.notifier).reset();
+                    context.go('/');
+                  },
+                  shareTextBuilder: () => buildShareText('Skull King', [
+                    for (final p in ranked)
+                      (name: p, score: state.totalScore(p)),
+                  ]),
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WinnerBanner extends StatelessWidget {
-  final String winner;
-  const _WinnerBanner({required this.winner});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: scheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('🏆', style: TextStyle(fontSize: 32)),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Vainqueur',
-                    style: TextStyle(color: scheme.onPrimaryContainer)),
-                Text(
-                  winner,
-                  style: TextStyle(
-                    color: scheme.onPrimaryContainer,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
@@ -152,6 +100,7 @@ class _ScoreTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ranked = state.rankedPlayers;
+    final hasScores = state.completedRounds.isNotEmpty;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -164,6 +113,7 @@ class _ScoreTable extends StatelessWidget {
               final idx = e.key;
               final player = e.value;
               final total = state.totalScore(player);
+              final isLeader = hasScores && idx == 0;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
@@ -175,15 +125,15 @@ class _ScoreTable extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
-                    Expanded(child: Text(player)),
+                    Expanded(child: Text(isLeader ? '$player 👑' : player)),
                     Text(
                       '$total pts',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: total >= 0
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.error,
-                          ),
+                        fontWeight: FontWeight.bold,
+                        color: total >= 0
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                 ),
@@ -211,35 +161,43 @@ class _LastRoundDetail extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                    child: Text('Joueur',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.bold))),
+                  child: Text(
+                    'Joueur',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 SizedBox(
-                    width: 60,
-                    child: Text('Annonce',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.bold))),
+                  width: 60,
+                  child: Text(
+                    'Annonce',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 SizedBox(
-                    width: 50,
-                    child: Text('Plis',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.bold))),
+                  width: 50,
+                  child: Text(
+                    'Plis',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 SizedBox(
-                    width: 55,
-                    child: Text('Score',
-                        textAlign: TextAlign.right,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.bold))),
+                  width: 55,
+                  child: Text(
+                    'Score',
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             ),
             const Divider(),
@@ -251,17 +209,19 @@ class _LastRoundDetail extends StatelessWidget {
                   children: [
                     Expanded(child: Text(p)),
                     SizedBox(
-                        width: 60,
-                        child: Text(
-                          '${round.bids[p] ?? 0}',
-                          textAlign: TextAlign.center,
-                        )),
+                      width: 60,
+                      child: Text(
+                        '${round.bids[p] ?? 0}',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                     SizedBox(
-                        width: 50,
-                        child: Text(
-                          '${round.tricksWon[p] ?? 0}',
-                          textAlign: TextAlign.center,
-                        )),
+                      width: 50,
+                      child: Text(
+                        '${round.tricksWon[p] ?? 0}',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                     SizedBox(
                       width: 55,
                       child: Text(

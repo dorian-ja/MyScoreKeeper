@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/theme_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -20,14 +21,21 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Mode sombre'),
             subtitle: Text(isDark ? 'Activé' : 'Désactivé'),
             value: isDark,
-            onChanged: (v) =>
-                ref.read(themeProvider.notifier).setDark(v),
+            onChanged: (v) => ref.read(themeProvider.notifier).setDark(v),
           ),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('My Score Keeper'),
-            subtitle: const Text('v1.0.0'),
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final version = snapshot.hasData
+                  ? 'v${snapshot.data!.version}+${snapshot.data!.buildNumber}'
+                  : '…';
+              return ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('My Score Keeper'),
+                subtitle: Text(version),
+              );
+            },
           ),
         ],
       ),

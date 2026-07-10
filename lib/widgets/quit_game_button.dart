@@ -20,7 +20,8 @@ class QuitGameButton extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Quitter la partie ?'),
         content: const Text(
-            'La progression de cette partie ne sera pas sauvegardée.'),
+          'La progression de cette partie ne sera pas sauvegardée.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),

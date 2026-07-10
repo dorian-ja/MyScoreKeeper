@@ -22,27 +22,41 @@ class NumberStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _btn(context, Icons.remove, value > min, () => onChanged(value - 1),
-            scheme),
+        _btn(
+          context,
+          Icons.remove,
+          value > min,
+          () => onChanged(value - 1),
+          scheme,
+        ),
         SizedBox(
           width: 40,
           child: Text(
             '$value',
             textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        _btn(context, Icons.add, value < max, () => onChanged(value + 1),
-            scheme),
+        _btn(
+          context,
+          Icons.add,
+          value < max,
+          () => onChanged(value + 1),
+          scheme,
+        ),
       ],
     );
   }
 
-  Widget _btn(BuildContext context, IconData icon, bool enabled,
-      VoidCallback onTap, ColorScheme scheme) {
+  Widget _btn(
+    BuildContext context,
+    IconData icon,
+    bool enabled,
+    VoidCallback onTap,
+    ColorScheme scheme,
+  ) {
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(size / 2),

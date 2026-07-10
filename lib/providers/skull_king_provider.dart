@@ -1,20 +1,61 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/skull_king_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
+import '../services/game_persistence.dart';
+import '../services/player_names_store.dart';
 import 'history_provider.dart';
 
-final skullKingProvider =
-    StateNotifierProvider<SkullKingNotifier, SkGameState>((ref) {
-  return SkullKingNotifier(ref);
-});
+final skullKingProvider = StateNotifierProvider<SkullKingNotifier, SkGameState>(
+  (ref) {
+    return SkullKingNotifier(ref);
+  },
+);
 
 class SkullKingNotifier extends StateNotifier<SkGameState> {
   final Ref _ref;
   static const _uuid = Uuid();
+  static const persistKey = 'current_game_skull_king';
 
-  SkullKingNotifier(this._ref) : super(const SkGameState());
+  SkullKingNotifier(this._ref) : super(const SkGameState()) {
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    final json = await GamePersistence.load(persistKey);
+    if (json == null) return;
+    try {
+      final restored = SkGameState.fromJson(json);
+      if (restored.phase != SkPhase.setup && mounted) {
+        state = restored;
+        _enableWakelock();
+      }
+    } catch (_) {
+      await GamePersistence.clear(persistKey);
+    }
+  }
+
+  Future<void> _persist() async {
+    if (state.phase == SkPhase.setup) {
+      await GamePersistence.clear(persistKey);
+    } else {
+      await GamePersistence.save(persistKey, state.toJson());
+    }
+  }
+
+  void _enableWakelock() {
+    try {
+      WakelockPlus.enable();
+    } catch (_) {}
+  }
+
+  void _disableWakelock() {
+    try {
+      WakelockPlus.disable();
+    } catch (_) {}
+  }
 
   void startGame(List<String> players, SkScoringMode scoringMode) {
     state = SkGameState(
@@ -26,14 +67,21 @@ class SkullKingNotifier extends StateNotifier<SkGameState> {
       currentIsBoulet: {},
       scoringMode: scoringMode,
     );
+    PlayerNamesStore.save(GameType.skullKing.name, players);
+    _enableWakelock();
+    _persist();
   }
 
-  void submitBids(Map<String, int> bids, {Map<String, bool> isBoulet = const {}}) {
+  void submitBids(
+    Map<String, int> bids, {
+    Map<String, bool> isBoulet = const {},
+  }) {
     state = state.copyWith(
       currentBids: bids,
       currentIsBoulet: isBoulet,
       phase: SkPhase.scoring,
     );
+    _persist();
   }
 
   void submitResults(Map<String, int> tricksWon, Map<String, int> bonuses) {
@@ -49,8 +97,8 @@ class SkullKingNotifier extends StateNotifier<SkGameState> {
     state = state.copyWith(
       completedRounds: newRounds,
       phase: finished ? SkPhase.finished : SkPhase.scoreboard,
-      currentRound: finished ? state.currentRound : state.currentRound,
     );
+    _persist();
   }
 
   void nextRound() {
@@ -59,6 +107,24 @@ class SkullKingNotifier extends StateNotifier<SkGameState> {
       phase: SkPhase.bidding,
       currentBids: {},
     );
+    _persist();
+  }
+
+  /// Annule la dernière manche : elle devra être resaisie entièrement.
+  void undoLastRound() {
+    if (state.completedRounds.isEmpty) return;
+    final removed = state.completedRounds.last;
+    state = state.copyWith(
+      completedRounds: state.completedRounds.sublist(
+        0,
+        state.completedRounds.length - 1,
+      ),
+      currentRound: removed.round,
+      phase: SkPhase.bidding,
+      currentBids: {},
+      currentIsBoulet: {},
+    );
+    _persist();
   }
 
   Future<void> saveToHistory() async {
@@ -78,5 +144,7 @@ class SkullKingNotifier extends StateNotifier<SkGameState> {
 
   void reset() {
     state = const SkGameState();
+    _disableWakelock();
+    GamePersistence.clear(persistKey);
   }
 }

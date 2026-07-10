@@ -32,19 +32,6 @@ enum GameType {
     }
   }
 
-  IconData get icon {
-    switch (this) {
-      case GameType.skullKing:
-        return Icons.catching_pokemon;
-      case GameType.tichu:
-        return Icons.style;
-      case GameType.dameDepique:
-        return Icons.favorite;
-      case GameType.autre:
-        return Icons.plus_one;
-    }
-  }
-
   Color get color {
     switch (this) {
       case GameType.skullKing:

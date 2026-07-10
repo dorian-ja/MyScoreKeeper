@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,21 +18,72 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Compteur de scores pour vos jeux de société : Skull King, Tichu, Dame de Pique et plus encore.">
+  <meta name="theme-color" content="#C8752E">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="my_score_keeper">
+  <meta name="apple-mobile-web-app-title" content="My Score Keeper">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>my_score_keeper</title>
+  <title>My Score Keeper</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Splash affiché pendant le chargement de Flutter */
+    #splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: #FAF3E4;
+      z-index: 9999;
+      transition: opacity 0.3s ease-out;
+    }
+    @media (prefers-color-scheme: dark) {
+      #splash { background: #241A12; }
+      #splash p { color: #EDE0CC; }
+    }
+    #splash img {
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      animation: splash-pulse 1.6s ease-in-out infinite;
+    }
+    #splash p {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #3A2A1D;
+    }
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.92); opacity: 0.75; }
+    }
+  </style>
 </head>
 <body>
+  <div id="splash">
+    <img src="icons/Icon-192.png" alt="My Score Keeper">
+    <p>My Score Keeper</p>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(function () { splash.remove(); }, 300);
+      }
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

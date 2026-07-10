@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/game_type.dart';
 import '../../models/tichu_state.dart';
 import '../../providers/tichu_provider.dart';
+import '../../services/player_names_store.dart';
+import '../../theme.dart';
 
 class TichuSetupScreen extends ConsumerStatefulWidget {
   const TichuSetupScreen({super.key});
@@ -24,6 +27,24 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
 
   int get _teamSize => _mode == TichuMode.nankin ? 2 : 3;
   int get _totalPlayers => _teamSize * 2;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastNames();
+  }
+
+  Future<void> _loadLastNames() async {
+    final names = await PlayerNamesStore.load(
+      '${GameType.tichu.name}_${_mode.name}',
+    );
+    if (!mounted || names == null || names.isEmpty) return;
+    setState(() {
+      for (var i = 0; i < names.length && i < 6; i++) {
+        _controllers[i].text = names[i];
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -61,8 +82,10 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Mode de jeu',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Mode de jeu',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 12),
                     SegmentedButton<TichuMode>(
                       segments: const [
@@ -78,8 +101,10 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                         ),
                       ],
                       selected: {_mode},
-                      onSelectionChanged: (s) =>
-                          setState(() => _mode = s.first),
+                      onSelectionChanged: (s) {
+                        setState(() => _mode = s.first);
+                        _loadLastNames();
+                      },
                     ),
                     const SizedBox(height: 12),
                     _RuleHintCard(mode: _mode),
@@ -92,7 +117,7 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
             // Équipe A
             _TeamSection(
               teamLabel: 'Équipe A',
-              color: const Color(0xFF1B5E20),
+              color: tichuTeamAColor,
               controllers: _controllers.sublist(0, _teamSize),
               playerOffset: 0,
             ),
@@ -101,7 +126,7 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
             // Équipe B
             _TeamSection(
               teamLabel: 'Équipe B',
-              color: const Color(0xFF0D47A1),
+              color: tichuTeamBColor,
               controllers: _controllers.sublist(_teamSize, _totalPlayers),
               playerOffset: _teamSize,
             ),
@@ -114,8 +139,10 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Score cible',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Score cible',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       'La partie s\'arrête quand une équipe atteint ce score.',
@@ -125,9 +152,7 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                     TextFormField(
                       controller: _targetCtrl,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText: 'Score cible',
                         suffixText: 'points',
@@ -189,14 +214,16 @@ class _RuleHintCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('• ',
-                        style: TextStyle(color: scheme.onSurfaceVariant)),
+                    Text(
+                      '• ',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                     Expanded(
                       child: Text(
                         h,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
@@ -231,14 +258,14 @@ class _TeamSection extends StatelessWidget {
         children: [
           Container(
             color: color,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Text(
               teamLabel,
               style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
           ),
           Padding(

@@ -5,8 +5,8 @@ import '../models/game_history.dart';
 
 final historyProvider =
     StateNotifierProvider<HistoryNotifier, List<GameHistoryEntry>>((ref) {
-  return HistoryNotifier();
-});
+      return HistoryNotifier();
+    });
 
 class HistoryNotifier extends StateNotifier<List<GameHistoryEntry>> {
   static const _key = 'game_history';
@@ -21,9 +21,17 @@ class HistoryNotifier extends StateNotifier<List<GameHistoryEntry>> {
     if (raw == null) return;
     try {
       final list = jsonDecode(raw) as List;
-      state = list
-          .map((e) => GameHistoryEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
+      // Parse entrée par entrée : une entrée corrompue ou d'un format
+      // inconnu est ignorée sans faire perdre le reste de l'historique.
+      final entries = <GameHistoryEntry>[];
+      for (final e in list) {
+        try {
+          entries.add(
+            GameHistoryEntry.fromJson(Map<String, dynamic>.from(e as Map)),
+          );
+        } catch (_) {}
+      }
+      state = entries;
     } catch (_) {}
   }
 

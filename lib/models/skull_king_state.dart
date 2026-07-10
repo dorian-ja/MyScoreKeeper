@@ -54,22 +54,24 @@ class SkRoundData {
   }
 
   Map<String, dynamic> toJson() => {
-        'round': round,
-        'bids': bids,
-        'tricksWon': tricksWon,
-        'bonuses': bonuses,
-        'isBoulet': isBoulet,
-      };
+    'round': round,
+    'bids': bids,
+    'tricksWon': tricksWon,
+    'bonuses': bonuses,
+    'isBoulet': isBoulet,
+  };
 
   factory SkRoundData.fromJson(Map<String, dynamic> j) => SkRoundData(
-        round: j['round'] as int,
-        bids: Map<String, int>.from(j['bids'] as Map),
-        tricksWon: Map<String, int>.from(j['tricksWon'] as Map),
-        bonuses: Map<String, int>.from(j['bonuses'] as Map),
-        isBoulet: j['isBoulet'] != null
-            ? (j['isBoulet'] as Map).map((k, v) => MapEntry(k.toString(), v as bool))
-            : {},
-      );
+    round: j['round'] as int,
+    bids: Map<String, int>.from(j['bids'] as Map),
+    tricksWon: Map<String, int>.from(j['tricksWon'] as Map),
+    bonuses: Map<String, int>.from(j['bonuses'] as Map),
+    isBoulet: j['isBoulet'] != null
+        ? (j['isBoulet'] as Map).map(
+            (k, v) => MapEntry(k.toString(), v as bool),
+          )
+        : {},
+  );
 }
 
 @immutable
@@ -93,7 +95,9 @@ class SkGameState {
   });
 
   int totalScore(String player) => completedRounds.fold(
-      0, (sum, r) => sum + r.scoreForPlayer(player, scoringMode));
+    0,
+    (sum, r) => sum + r.scoreForPlayer(player, scoringMode),
+  );
 
   List<String> get rankedPlayers {
     final sorted = List<String>.from(players);
@@ -102,12 +106,7 @@ class SkGameState {
   }
 
   /// Calcule le score prévisible d'un joueur avec des valeurs non encore soumises
-  int previewScore(
-    String player,
-    int tricks,
-    int bonus,
-    bool boulet,
-  ) {
+  int previewScore(String player, int tricks, int bonus, bool boulet) {
     final bid = currentBids[player] ?? 0;
     final diff = (bid - tricks).abs();
 
@@ -129,6 +128,30 @@ class SkGameState {
     }
   }
 
+  Map<String, dynamic> toJson() => {
+    'players': players,
+    'currentRound': currentRound,
+    'phase': phase.name,
+    'completedRounds': completedRounds.map((r) => r.toJson()).toList(),
+    'currentBids': currentBids,
+    'currentIsBoulet': currentIsBoulet,
+    'scoringMode': scoringMode.name,
+  };
+
+  factory SkGameState.fromJson(Map<String, dynamic> j) => SkGameState(
+    players: List<String>.from(j['players'] as List),
+    currentRound: j['currentRound'] as int,
+    phase: SkPhase.values.byName(j['phase'] as String),
+    completedRounds: (j['completedRounds'] as List)
+        .map((e) => SkRoundData.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
+    currentBids: Map<String, int>.from(j['currentBids'] as Map),
+    currentIsBoulet: (j['currentIsBoulet'] as Map).map(
+      (k, v) => MapEntry(k.toString(), v as bool),
+    ),
+    scoringMode: SkScoringMode.values.byName(j['scoringMode'] as String),
+  );
+
   SkGameState copyWith({
     List<String>? players,
     int? currentRound,
@@ -137,14 +160,13 @@ class SkGameState {
     Map<String, int>? currentBids,
     Map<String, bool>? currentIsBoulet,
     SkScoringMode? scoringMode,
-  }) =>
-      SkGameState(
-        players: players ?? this.players,
-        currentRound: currentRound ?? this.currentRound,
-        phase: phase ?? this.phase,
-        completedRounds: completedRounds ?? this.completedRounds,
-        currentBids: currentBids ?? this.currentBids,
-        currentIsBoulet: currentIsBoulet ?? this.currentIsBoulet,
-        scoringMode: scoringMode ?? this.scoringMode,
-      );
+  }) => SkGameState(
+    players: players ?? this.players,
+    currentRound: currentRound ?? this.currentRound,
+    phase: phase ?? this.phase,
+    completedRounds: completedRounds ?? this.completedRounds,
+    currentBids: currentBids ?? this.currentBids,
+    currentIsBoulet: currentIsBoulet ?? this.currentIsBoulet,
+    scoringMode: scoringMode ?? this.scoringMode,
+  );
 }

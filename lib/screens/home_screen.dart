@@ -1,13 +1,99 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/dame_de_pique_state.dart';
 import '../models/game_type.dart';
+import '../models/generic_state.dart';
+import '../models/skull_king_state.dart';
+import '../models/tichu_state.dart';
+import '../providers/dame_de_pique_provider.dart';
+import '../providers/generic_provider.dart';
+import '../providers/skull_king_provider.dart';
+import '../providers/tichu_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  List<_ResumeInfo> _inProgressGames(WidgetRef ref) {
+    final result = <_ResumeInfo>[];
+
+    final sk = ref.watch(skullKingProvider);
+    if (sk.phase != SkPhase.setup) {
+      result.add(
+        _ResumeInfo(
+          type: GameType.skullKing,
+          detail: sk.phase == SkPhase.finished
+              ? 'Partie terminée — non sauvegardée'
+              : 'Manche ${sk.currentRound}/10 • ${sk.players.length} joueurs',
+          route: switch (sk.phase) {
+            SkPhase.bidding => '/skull-king/bid',
+            SkPhase.scoring => '/skull-king/result',
+            _ => '/skull-king/scoreboard',
+          },
+          discard: () => ref.read(skullKingProvider.notifier).reset(),
+        ),
+      );
+    }
+
+    final tichu = ref.watch(tichuProvider);
+    if (tichu.phase != TichuPhase.setup) {
+      result.add(
+        _ResumeInfo(
+          type: GameType.tichu,
+          detail: tichu.phase == TichuPhase.finished
+              ? 'Partie terminée — non sauvegardée'
+              : 'Manche ${tichu.currentRound} • '
+                    '${tichu.teamATotal} / ${tichu.teamBTotal} pts',
+          route: tichu.phase == TichuPhase.round
+              ? '/tichu/round'
+              : '/tichu/scoreboard',
+          discard: () => ref.read(tichuProvider.notifier).reset(),
+        ),
+      );
+    }
+
+    final ddp = ref.watch(dameDepiqueProvider);
+    if (ddp.phase != DdpPhase.setup) {
+      result.add(
+        _ResumeInfo(
+          type: GameType.dameDepique,
+          detail: ddp.phase == DdpPhase.finished
+              ? 'Partie terminée — non sauvegardée'
+              : 'Manche ${ddp.completedRounds.length + 1} • '
+                    'seuil ${ddp.threshold} pts',
+          route: ddp.phase == DdpPhase.round
+              ? '/dame-de-pique/round'
+              : '/dame-de-pique/scoreboard',
+          discard: () => ref.read(dameDepiqueProvider.notifier).reset(),
+        ),
+      );
+    }
+
+    final generic = ref.watch(genericGameProvider);
+    if (generic.phase != GenericPhase.setup) {
+      result.add(
+        _ResumeInfo(
+          type: GameType.autre,
+          detail: generic.phase == GenericPhase.finished
+              ? 'Partie terminée — non sauvegardée'
+              : 'Manche ${generic.completedRounds.length + 1} • '
+                    '${generic.players.length} joueurs',
+          route: generic.phase == GenericPhase.round
+              ? '/autre/round'
+              : '/autre/scoreboard',
+          discard: () => ref.read(genericGameProvider.notifier).reset(),
+        ),
+      );
+    }
+
+    return result;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final inProgress = _inProgressGames(ref);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Score Keeper'),
@@ -25,16 +111,30 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Choisir un jeu',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: scheme.onSurface,
-                    ),
-              ),
-              const SizedBox(height: 16),
               Expanded(
                 child: ListView(
                   children: [
+                    if (inProgress.isNotEmpty) ...[
+                      Text(
+                        'Partie en cours',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(color: scheme.onSurface),
+                      ),
+                      const SizedBox(height: 12),
+                      ...inProgress.map(
+                        (info) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _ResumeCard(info: info),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Text(
+                      'Choisir un jeu',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(color: scheme.onSurface),
+                    ),
+                    const SizedBox(height: 16),
                     _GameCard(game: GameType.skullKing),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.tichu),
@@ -43,19 +143,142 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.autre),
                     const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.history),
-                      label: const Text('Historique des parties'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.history),
+                            label: const Text('Historique'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => context.push('/history'),
+                          ),
                         ),
-                      ),
-                      onPressed: () => context.push('/history'),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.bar_chart),
+                            label: const Text('Statistiques'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => context.push('/stats'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ResumeInfo {
+  final GameType type;
+  final String detail;
+  final String route;
+  final VoidCallback discard;
+
+  const _ResumeInfo({
+    required this.type,
+    required this.detail,
+    required this.route,
+    required this.discard,
+  });
+}
+
+class _ResumeCard extends StatelessWidget {
+  final _ResumeInfo info;
+
+  const _ResumeCard({required this.info});
+
+  Future<void> _confirmDiscard(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Abandonner la partie ?'),
+        content: const Text('La partie en cours sera définitivement perdue.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Non'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Abandonner'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) info.discard();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.primaryContainer,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.go(info.route),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  info.type.imagePath,
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      info.type.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                    Text(
+                      info.detail,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onPrimaryContainer.withValues(alpha: .8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: scheme.onPrimaryContainer,
+                ),
+                tooltip: 'Abandonner',
+                onPressed: () => _confirmDiscard(context),
+              ),
+              FilledButton(
+                onPressed: () => context.go(info.route),
+                child: const Text('Reprendre'),
               ),
             ],
           ),
@@ -91,9 +314,7 @@ class _GameCard extends StatelessWidget {
         onTap: () => context.push(_route),
         child: Container(
           decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(color: game.color, width: 5),
-            ),
+            border: Border(left: BorderSide(color: game.color, width: 5)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
@@ -114,19 +335,16 @@ class _GameCard extends StatelessWidget {
                   children: [
                     Text(
                       game.displayName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       game.subtitle,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),

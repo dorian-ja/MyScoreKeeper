@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/game_type.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
+import '../../services/player_names_store.dart';
 import '../../widgets/number_stepper.dart';
 
 class SkSetupScreen extends ConsumerStatefulWidget {
@@ -20,7 +22,22 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(8, (i) => TextEditingController(text: 'Joueur ${i + 1}'));
+    _controllers = List.generate(
+      8,
+      (i) => TextEditingController(text: 'Joueur ${i + 1}'),
+    );
+    _loadLastNames();
+  }
+
+  Future<void> _loadLastNames() async {
+    final names = await PlayerNamesStore.load(GameType.skullKing.name);
+    if (!mounted || names == null || names.isEmpty) return;
+    setState(() {
+      _playerCount = names.length.clamp(2, 8);
+      for (var i = 0; i < names.length && i < 8; i++) {
+        _controllers[i].text = names[i];
+      }
+    });
   }
 
   @override
@@ -57,8 +74,10 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Système de score',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Système de score',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 12),
                     SegmentedButton<SkScoringMode>(
                       segments: const [
@@ -167,25 +186,28 @@ class _ScoringHintCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: hints
-            .map((h) => Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('• ',
-                          style: TextStyle(color: scheme.onSurfaceVariant)),
-                      Expanded(
-                        child: Text(
-                          h,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
+            .map(
+              (h) => Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                    Expanded(
+                      child: Text(
+                        h,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                ))
+                    ),
+                  ],
+                ),
+              ),
+            )
             .toList(),
       ),
     );

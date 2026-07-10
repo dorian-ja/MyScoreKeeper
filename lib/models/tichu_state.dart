@@ -26,24 +26,23 @@ class TichuRoundData {
       sweep == TichuSweep.none ? 100 - teamACardPoints : 0;
 
   Map<String, dynamic> toJson() => {
-        'announcements': announcements.map((k, v) => MapEntry(k, v.name)),
-        'announcementSuccess': announcementSuccess,
-        'sweep': sweep.name,
-        'teamACardPoints': teamACardPoints,
-      };
+    'announcements': announcements.map((k, v) => MapEntry(k, v.name)),
+    'announcementSuccess': announcementSuccess,
+    'sweep': sweep.name,
+    'teamACardPoints': teamACardPoints,
+  };
 
   factory TichuRoundData.fromJson(Map<String, dynamic> j) => TichuRoundData(
-        announcements: (j['announcements'] as Map).map(
-          (k, v) => MapEntry(
-            k.toString(),
-            TichuAnnouncement.values.byName(v.toString()),
-          ),
-        ),
-        announcementSuccess: (j['announcementSuccess'] as Map)
-            .map((k, v) => MapEntry(k.toString(), v as bool)),
-        sweep: TichuSweep.values.byName(j['sweep'] as String),
-        teamACardPoints: j['teamACardPoints'] as int,
-      );
+    announcements: (j['announcements'] as Map).map(
+      (k, v) =>
+          MapEntry(k.toString(), TichuAnnouncement.values.byName(v.toString())),
+    ),
+    announcementSuccess: (j['announcementSuccess'] as Map).map(
+      (k, v) => MapEntry(k.toString(), v as bool),
+    ),
+    sweep: TichuSweep.values.byName(j['sweep'] as String),
+    teamACardPoints: j['teamACardPoints'] as int,
+  );
 }
 
 @immutable
@@ -85,8 +84,8 @@ class TichuGameState {
     final base = r.sweep == TichuSweep.teamA
         ? sweepBonus
         : r.sweep == TichuSweep.teamB
-            ? 0
-            : r.teamACardPoints;
+        ? 0
+        : r.teamACardPoints;
     return base + _annBonusForIndices(r, _teamAIndices);
   }
 
@@ -94,8 +93,8 @@ class TichuGameState {
     final base = r.sweep == TichuSweep.teamB
         ? sweepBonus
         : r.sweep == TichuSweep.teamA
-            ? 0
-            : r.teamBCardPoints;
+        ? 0
+        : r.teamBCardPoints;
     return base + _annBonusForIndices(r, _teamBIndices);
   }
 
@@ -135,6 +134,28 @@ class TichuGameState {
     return '${names.sublist(0, names.length - 1).join(', ')} & ${names.last}';
   }
 
+  Map<String, dynamic> toJson() => {
+    'players': players,
+    'targetScore': targetScore,
+    'phase': phase.name,
+    'completedRounds': completedRounds.map((r) => r.toJson()).toList(),
+    'currentRound': currentRound,
+    'mode': mode.name,
+  };
+
+  factory TichuGameState.fromJson(Map<String, dynamic> j) => TichuGameState(
+    players: List<String>.from(j['players'] as List),
+    targetScore: j['targetScore'] as int,
+    phase: TichuPhase.values.byName(j['phase'] as String),
+    completedRounds: (j['completedRounds'] as List)
+        .map(
+          (e) => TichuRoundData.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList(),
+    currentRound: j['currentRound'] as int,
+    mode: TichuMode.values.byName(j['mode'] as String),
+  );
+
   TichuGameState copyWith({
     List<String>? players,
     int? targetScore,
@@ -142,13 +163,12 @@ class TichuGameState {
     List<TichuRoundData>? completedRounds,
     int? currentRound,
     TichuMode? mode,
-  }) =>
-      TichuGameState(
-        players: players ?? this.players,
-        targetScore: targetScore ?? this.targetScore,
-        phase: phase ?? this.phase,
-        completedRounds: completedRounds ?? this.completedRounds,
-        currentRound: currentRound ?? this.currentRound,
-        mode: mode ?? this.mode,
-      );
+  }) => TichuGameState(
+    players: players ?? this.players,
+    targetScore: targetScore ?? this.targetScore,
+    phase: phase ?? this.phase,
+    completedRounds: completedRounds ?? this.completedRounds,
+    currentRound: currentRound ?? this.currentRound,
+    mode: mode ?? this.mode,
+  );
 }

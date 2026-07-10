@@ -29,8 +29,10 @@ class HistoryDetailScreen extends ConsumerWidget {
     }
 
     final sorted = entry.playerOrTeamNames.toList()
-      ..sort((a, b) =>
-          (entry.finalScores[b] ?? 0).compareTo(entry.finalScores[a] ?? 0));
+      ..sort(
+        (a, b) =>
+            (entry.finalScores[b] ?? 0).compareTo(entry.finalScores[a] ?? 0),
+      );
 
     return Scaffold(
       appBar: AppBar(
@@ -61,17 +63,20 @@ class HistoryDetailScreen extends ConsumerWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Vainqueur',
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer)),
+                      Text(
+                        'Vainqueur',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
                       Text(
                         entry.winner,
                         style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -90,8 +95,10 @@ class HistoryDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Scores finaux',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Scores finaux',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   ...sorted.asMap().entries.map((e) {
                     final idx = e.key;
@@ -103,9 +110,12 @@ class HistoryDetailScreen extends ConsumerWidget {
                         children: [
                           SizedBox(
                             width: 28,
-                            child: Text('${idx + 1}.',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
+                            child: Text(
+                              '${idx + 1}.',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           Expanded(child: Text(name)),
                           Text(
@@ -123,17 +133,15 @@ class HistoryDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           // Rounds
           if (entry.rounds.isNotEmpty) ...[
-            Text('Détail des manches (${entry.rounds.length})',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Détail des manches (${entry.rounds.length})',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             ...entry.rounds.asMap().entries.map((e) {
               final i = e.key;
               final r = e.value;
-              return _RoundCard(
-                roundIndex: i,
-                roundData: r,
-                entry: entry,
-              );
+              return _RoundCard(roundIndex: i, roundData: r, entry: entry);
             }),
           ],
         ],
@@ -171,7 +179,10 @@ class _RoundCard extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     switch (entry.gameType.name) {
       case 'skullKing':
-        return _SkullKingRound(data: roundData, players: entry.playerOrTeamNames);
+        return _SkullKingRound(
+          data: roundData,
+          players: entry.playerOrTeamNames,
+        );
       case 'tichu':
         return _TichuRound(data: roundData, players: entry.playerOrTeamNames);
       case 'dameDepique':
@@ -202,8 +213,10 @@ class _SkullKingRound extends StatelessWidget {
         return Row(
           children: [
             Expanded(child: Text(p)),
-            Text('Annonce: $bid  Plis: $trick  Bonus: $bonus',
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Annonce: $bid  Plis: $trick  Bonus: $bonus',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         );
       }).toList(),
@@ -224,9 +237,13 @@ class _TichuRound extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (sweep != 'none')
-          Text('Double victoire: ${sweep == 'teamA' ? players.first : players.last}'),
+          Text(
+            'Double victoire: ${sweep == 'teamA' ? players.first : players.last}',
+          ),
         if (sweep == 'none')
-          Text('Points cartes — Éq. A: $teamAPoints / Éq. B: ${100 - teamAPoints}'),
+          Text(
+            'Points cartes — Éq. A: $teamAPoints / Éq. B: ${100 - teamAPoints}',
+          ),
       ],
     );
   }
@@ -239,16 +256,17 @@ class _DdpRound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final penalties =
-        Map<String, int>.from(data['penalties'] as Map? ?? {});
+    final penalties = Map<String, int>.from(data['penalties'] as Map? ?? {});
     return Column(
       children: players.map((p) {
         final pts = penalties[p] ?? 0;
         return Row(
           children: [
             Expanded(child: Text(p)),
-            Text('$pts pts',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              '$pts pts',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         );
       }).toList(),
@@ -270,8 +288,10 @@ class _GenericRound extends StatelessWidget {
         return Row(
           children: [
             Expanded(child: Text(p)),
-            Text('$pts pts',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              '$pts pts',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         );
       }).toList(),

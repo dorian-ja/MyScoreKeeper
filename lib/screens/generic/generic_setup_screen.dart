@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/game_type.dart';
+import '../../models/generic_template.dart';
 import '../../providers/generic_provider.dart';
+import '../../services/generic_template_store.dart';
+import '../../services/player_names_store.dart';
 import '../../widgets/number_stepper.dart';
 
 class GenericSetupScreen extends ConsumerStatefulWidget {
   const GenericSetupScreen({super.key});
 
   @override
-  ConsumerState<GenericSetupScreen> createState() =>
-      _GenericSetupScreenState();
+  ConsumerState<GenericSetupScreen> createState() => _GenericSetupScreenState();
 }
 
 class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
@@ -20,6 +23,8 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
   bool _higherWins = true;
   bool _useMaxScore = false;
   bool _useMaxRounds = false;
+  List<GenericTemplate> _templates = [];
+  String? _selectedTemplate;
   late List<TextEditingController> _nameControllers;
   final _maxScoreCtrl = TextEditingController(text: '100');
   final _maxRoundsCtrl = TextEditingController(text: '10');
@@ -28,7 +33,25 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
   void initState() {
     super.initState();
     _nameControllers = List.generate(
-        _maxPlayers, (i) => TextEditingController(text: 'Joueur ${i + 1}'));
+      _maxPlayers,
+      (i) => TextEditingController(text: 'Joueur ${i + 1}'),
+    );
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final names = await PlayerNamesStore.load(GameType.autre.name);
+    final templates = await GenericTemplateStore.load();
+    if (!mounted) return;
+    setState(() {
+      _templates = templates;
+      if (names != null && names.isNotEmpty) {
+        _playerCount = names.length.clamp(2, _maxPlayers);
+        for (var i = 0; i < names.length && i < _maxPlayers; i++) {
+          _nameControllers[i].text = names[i];
+        }
+      }
+    });
   }
 
   @override
@@ -41,6 +64,92 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     super.dispose();
   }
 
+  void _applyTemplate(GenericTemplate t) {
+    setState(() {
+      _selectedTemplate = t.name;
+      _higherWins = t.higherWins;
+      _useMaxScore = t.maxScore != null;
+      _useMaxRounds = t.maxRounds != null;
+      if (t.maxScore != null) _maxScoreCtrl.text = '${t.maxScore}';
+      if (t.maxRounds != null) _maxRoundsCtrl.text = '${t.maxRounds}';
+      _playerCount = t.playerCount.clamp(2, _maxPlayers);
+    });
+  }
+
+  Future<void> _saveAsTemplate() async {
+    final nameCtrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enregistrer comme template'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nom du jeu',
+            hintText: 'Ex : Yams, Belote, 6 qui prend…',
+          ),
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+    nameCtrl.dispose();
+    if (name == null || name.isEmpty) return;
+
+    final template = GenericTemplate(
+      name: name,
+      higherWins: _higherWins,
+      maxScore: _useMaxScore ? int.tryParse(_maxScoreCtrl.text) : null,
+      maxRounds: _useMaxRounds ? int.tryParse(_maxRoundsCtrl.text) : null,
+      playerCount: _playerCount,
+    );
+    final templates = await GenericTemplateStore.upsert(template);
+    if (!mounted) return;
+    setState(() {
+      _templates = templates;
+      _selectedTemplate = name;
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Template « $name » enregistré')));
+  }
+
+  Future<void> _deleteTemplate(GenericTemplate t) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Supprimer « ${t.name} » ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final templates = await GenericTemplateStore.delete(t.name);
+    if (!mounted) return;
+    setState(() {
+      _templates = templates;
+      if (_selectedTemplate == t.name) _selectedTemplate = null;
+    });
+  }
+
   void _startGame() {
     final players = List.generate(
       _playerCount,
@@ -48,11 +157,15 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
           ? 'Joueur ${i + 1}'
           : _nameControllers[i].text.trim(),
     );
-    final maxScore =
-        _useMaxScore ? int.tryParse(_maxScoreCtrl.text) ?? 100 : null;
-    final maxRounds =
-        _useMaxRounds ? int.tryParse(_maxRoundsCtrl.text) ?? 10 : null;
-    ref.read(genericGameProvider.notifier).startGame(
+    final maxScore = _useMaxScore
+        ? int.tryParse(_maxScoreCtrl.text) ?? 100
+        : null;
+    final maxRounds = _useMaxRounds
+        ? int.tryParse(_maxRoundsCtrl.text) ?? 10
+        : null;
+    ref
+        .read(genericGameProvider.notifier)
+        .startGame(
           players,
           higherWins: _higherWins,
           maxScore: maxScore,
@@ -69,14 +182,78 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Templates enregistrés
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sens du score',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Mes jeux',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        TextButton.icon(
+                          icon: const Icon(
+                            Icons.bookmark_add_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('Enregistrer'),
+                          onPressed: _saveAsTemplate,
+                        ),
+                      ],
+                    ),
+                    if (_templates.isEmpty)
+                      Text(
+                        'Configurez votre jeu ci-dessous puis enregistrez-le '
+                        'comme template pour le retrouver ici.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        children: _templates
+                            .map(
+                              (t) => ChoiceChip(
+                                label: Text(t.name),
+                                selected: _selectedTemplate == t.name,
+                                onSelected: (_) => _applyTemplate(t),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    if (_selectedTemplate != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          label: Text('Supprimer « $_selectedTemplate »'),
+                          onPressed: () => _deleteTemplate(
+                            _templates.firstWhere(
+                              (t) => t.name == _selectedTemplate,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sens du score',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 12),
                     SegmentedButton<bool>(
                       segments: const [
@@ -106,8 +283,10 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Nombre de joueurs',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Nombre de joueurs',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     NumberStepper(
                       value: _playerCount,
                       min: 2,
@@ -129,7 +308,8 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Score max'),
                       subtitle: const Text(
-                          'La partie s\'arrête quand un joueur l\'atteint.'),
+                        'La partie s\'arrête quand un joueur l\'atteint.',
+                      ),
                       value: _useMaxScore,
                       onChanged: (v) => setState(() => _useMaxScore = v),
                     ),
@@ -160,7 +340,8 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Nombre de manches max'),
                       subtitle: const Text(
-                          'La partie s\'arrête après ce nombre de manches.'),
+                        'La partie s\'arrête après ce nombre de manches.',
+                      ),
                       value: _useMaxRounds,
                       onChanged: (v) => setState(() => _useMaxRounds = v),
                     ),
@@ -181,8 +362,10 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Noms des joueurs',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Noms des joueurs',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             ...List.generate(_playerCount, (i) {
               return Padding(
