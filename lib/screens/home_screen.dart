@@ -6,11 +6,13 @@ import '../models/dame_de_pique_state.dart';
 import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../models/generic_state.dart';
+import '../models/molkky_state.dart';
 import '../models/palet_state.dart';
 import '../models/skull_king_state.dart';
 import '../models/tichu_state.dart';
 import '../providers/dame_de_pique_provider.dart';
 import '../providers/generic_provider.dart';
+import '../providers/molkky_provider.dart';
 import '../providers/palet_provider.dart';
 import '../providers/skull_king_provider.dart';
 import '../providers/tichu_provider.dart';
@@ -99,6 +101,26 @@ class HomeScreen extends ConsumerWidget {
       );
     }
 
+    final molkky = ref.watch(molkkyProvider);
+    if (molkky.phase != MolkkyPhase.setup) {
+      final leader = molkky.ranking.first;
+      result.add(
+        _ResumeInfo(
+          type: GameType.molkky,
+          detail: molkky.phase == MolkkyPhase.finished
+              ? l.gameFinishedUnsaved
+              : l.molkkyResumeDetail(
+                  molkky.scoreOf(leader),
+                  molkky.teams.length,
+                ),
+          route: molkky.phase == MolkkyPhase.playing
+              ? '/molkky/play'
+              : '/molkky/scoreboard',
+          discard: () => ref.read(molkkyProvider.notifier).reset(),
+        ),
+      );
+    }
+
     final generic = ref.watch(genericGameProvider);
     if (generic.phase != GenericPhase.setup) {
       result.add(
@@ -175,6 +197,8 @@ class HomeScreen extends ConsumerWidget {
                     _GameCard(game: GameType.dameDepique),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.palet),
+                    const SizedBox(height: 12),
+                    _GameCard(game: GameType.molkky),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.autre),
                     const SizedBox(height: 24),
@@ -332,6 +356,8 @@ class _GameCard extends StatelessWidget {
         return '/dame-de-pique/setup';
       case GameType.palet:
         return '/palet/setup';
+      case GameType.molkky:
+        return '/molkky/setup';
       case GameType.autre:
         return '/autre/setup';
     }

@@ -17,6 +17,9 @@ import 'screens/dame_de_pique/ddp_scoreboard_screen.dart';
 import 'screens/palet/palet_setup_screen.dart';
 import 'screens/palet/palet_round_screen.dart';
 import 'screens/palet/palet_scoreboard_screen.dart';
+import 'screens/molkky/molkky_setup_screen.dart';
+import 'screens/molkky/molkky_play_screen.dart';
+import 'screens/molkky/molkky_scoreboard_screen.dart';
 import 'screens/generic/generic_setup_screen.dart';
 import 'screens/generic/generic_round_screen.dart';
 import 'screens/generic/generic_scoreboard_screen.dart';
@@ -77,6 +80,20 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/palet/scoreboard',
       builder: (_, __) => const PaletScoreboardScreen(),
+    ),
+
+    // Mölkky
+    GoRoute(
+      path: '/molkky/setup',
+      builder: (_, __) => const MolkkySetupScreen(),
+    ),
+    GoRoute(
+      path: '/molkky/play',
+      builder: (_, __) => const MolkkyPlayScreen(),
+    ),
+    GoRoute(
+      path: '/molkky/scoreboard',
+      builder: (_, __) => const MolkkyScoreboardScreen(),
     ),
 
     // Autre (générique)
