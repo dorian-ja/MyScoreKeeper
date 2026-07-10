@@ -4,28 +4,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
-import '../../models/tichu_state.dart';
-import '../../providers/tichu_provider.dart';
+import '../../providers/molkky_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
-import '../../theme.dart';
+import '../../widgets/number_stepper.dart';
+import 'molkky_theme.dart';
 
-class TichuSetupScreen extends ConsumerStatefulWidget {
-  const TichuSetupScreen({super.key});
+class MolkkySetupScreen extends ConsumerStatefulWidget {
+  const MolkkySetupScreen({super.key});
 
   @override
-  ConsumerState<TichuSetupScreen> createState() => _TichuSetupScreenState();
+  ConsumerState<MolkkySetupScreen> createState() => _MolkkySetupScreenState();
 }
 
-class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
-  TichuMode _mode = TichuMode.nankin;
+class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
+  static const _maxTeams = 4;
+  static const _maxTeamSize = 4;
 
-  // 6 contrôleurs au maximum (2 ou 3 par équipe selon le mode)
-  final _controllers = List.generate(6, (i) => TextEditingController());
-  final _targetCtrl = TextEditingController(text: '1000');
+  int _teamCount = 2;
+  int _teamSize = 2;
+  bool _elimination = true;
 
-  int get _teamSize => _mode == TichuMode.nankin ? 2 : 3;
-  int get _totalPlayers => _teamSize * 2;
+  // Contrôleurs préalloués au max, indexés par [équipe * maxSize + joueur],
+  // stables quand le nombre d'équipes ou leur taille change (pas de perte
+  // de saisie).
+  final _controllers = List.generate(
+    _maxTeams * _maxTeamSize,
+    (i) => TextEditingController(),
+  );
+  final _targetCtrl = TextEditingController(text: '50');
 
   @override
   void initState() {
@@ -34,12 +41,10 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
   }
 
   Future<void> _loadLastNames() async {
-    final names = await PlayerNamesStore.load(
-      '${GameType.tichu.name}_${_mode.name}',
-    );
+    final names = await PlayerNamesStore.load(GameType.molkky.name);
     if (!mounted || names == null || names.isEmpty) return;
     setState(() {
-      for (var i = 0; i < names.length && i < 6; i++) {
+      for (var i = 0; i < names.length && i < _controllers.length; i++) {
         _controllers[i].text = names[i];
       }
     });
@@ -54,89 +59,106 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
     super.dispose();
   }
 
+  int _ctrlIndex(int team, int player) => team * _maxTeamSize + player;
+
   void _startGame() {
     final l = AppLocalizations.of(context);
-    final rawNames = [
-      for (var i = 0; i < _totalPlayers; i++) _controllers[i].text.trim(),
-    ];
-    final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
-    if (!ensureUniqueNames(context, players)) return;
-    PlayerNamesStore.save(
-      '${GameType.tichu.name}_${_mode.name}',
-      rawNames,
-    );
-    final target = int.tryParse(_targetCtrl.text) ?? 1000;
-    ref.read(tichuProvider.notifier).startGame(players, target, _mode);
-    context.go('/tichu/round');
+    final teams = <List<String>>[];
+    for (var t = 0; t < _teamCount; t++) {
+      final raw = [
+        for (var p = 0; p < _teamSize; p++)
+          _controllers[_ctrlIndex(t, p)].text.trim(),
+      ];
+      teams.add(resolvePlayerNames(raw, defaultName: l.playerLabel));
+    }
+    final allNames = teams.expand((t) => t).toList();
+    if (!ensureUniqueNames(context, allNames)) return;
+
+    PlayerNamesStore.save(GameType.molkky.name, [
+      for (var t = 0; t < _teamCount; t++)
+        for (var p = 0; p < _teamSize; p++)
+          _controllers[_ctrlIndex(t, p)].text.trim(),
+    ]);
+    final target = int.tryParse(_targetCtrl.text) ?? 50;
+    ref
+        .read(molkkyProvider.notifier)
+        .startGame(teams, target <= 0 ? 50 : target, _elimination);
+    context.go('/molkky/play');
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l.tichuSetupTitle)),
+      appBar: AppBar(title: Text(l.molkkySetupTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Sélecteur de mode
+            _MolkkyRulesCard(),
+            const SizedBox(height: 12),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l.gameMode,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    SegmentedButton<TichuMode>(
-                      segments: [
-                        ButtonSegment(
-                          value: TichuMode.nankin,
-                          label: Text(l.tichuNankinLabel),
-                          icon: const Icon(Icons.group, size: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          l.molkkyTeamsCount,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        ButtonSegment(
-                          value: TichuMode.tientsin,
-                          label: Text(l.tichuTientsinLabel),
-                          icon: const Icon(Icons.groups, size: 18),
+                        NumberStepper(
+                          value: _teamCount,
+                          min: 2,
+                          max: _maxTeams,
+                          onChanged: (v) => setState(() => _teamCount = v),
                         ),
                       ],
-                      selected: {_mode},
-                      onSelectionChanged: (s) {
-                        setState(() => _mode = s.first);
-                        _loadLastNames();
-                      },
                     ),
-                    const SizedBox(height: 12),
-                    _RuleHintCard(mode: _mode),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          l.molkkyTeamSize,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        NumberStepper(
+                          value: _teamSize,
+                          min: 1,
+                          max: _maxTeamSize,
+                          onChanged: (v) => setState(() => _teamSize = v),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 12),
-
-            // Équipe A
-            _TeamSection(
-              teamLabel: l.teamA,
-              color: teamAColor,
-              controllers: _controllers.sublist(0, _teamSize),
-              playerOffset: 0,
+            for (var t = 0; t < _teamCount; t++) ...[
+              _TeamSection(
+                teamLabel: l.teamNumbered(t + 1),
+                color: molkkyTeamColor(t),
+                controllers: [
+                  for (var p = 0; p < _teamSize; p++)
+                    _controllers[_ctrlIndex(t, p)],
+                ],
+                playerOffset: t * _teamSize,
+              ),
+              const SizedBox(height: 12),
+            ],
+            Card(
+              child: SwitchListTile(
+                title: Text(l.molkkyEliminationRule),
+                subtitle: Text(l.molkkyEliminationDesc),
+                value: _elimination,
+                onChanged: (v) => setState(() => _elimination = v),
+              ),
             ),
             const SizedBox(height: 12),
-
-            // Équipe B
-            _TeamSection(
-              teamLabel: l.teamB,
-              color: teamBColor,
-              controllers: _controllers.sublist(_teamSize, _totalPlayers),
-              playerOffset: _teamSize,
-            ),
-            const SizedBox(height: 16),
-
-            // Score cible
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -149,7 +171,7 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      l.targetScoreDesc,
+                      l.molkkyTargetDesc,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -160,7 +182,6 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                       decoration: InputDecoration(
                         labelText: l.targetScore,
                         suffixText: l.pointsSuffix,
-                        hintText: l.targetScoreHint,
                       ),
                     ),
                   ],
@@ -180,49 +201,28 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
   }
 }
 
-/// Encart de rappel des différences de règles selon le mode
-class _RuleHintCard extends StatelessWidget {
-  final TichuMode mode;
-  const _RuleHintCard({required this.mode});
-
+class _MolkkyRulesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final hints = mode == TichuMode.nankin
-        ? [
-            l.tichuNankinHint1,
-            l.tichuNankinHint2,
-            l.tichuNankinHint3,
-            l.tichuNankinHint4,
-          ]
-        : [
-            l.tichuTientsinHint1,
-            l.tichuTientsinHint2,
-            l.tichuTientsinHint3,
-            l.tichuTientsinHint4,
-            l.tichuTientsinHint5,
-          ];
-
+    final hints = [l.molkkyHint1, l.molkkyHint2, l.molkkyHint3];
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: hints
             .map(
               (h) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: 3),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '• ',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
+                    Text('• ', style: TextStyle(color: scheme.onSurfaceVariant)),
                     Expanded(
                       child: Text(
                         h,

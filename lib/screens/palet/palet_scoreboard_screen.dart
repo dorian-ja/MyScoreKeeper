@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/tichu_state.dart';
-import '../../providers/tichu_provider.dart';
+import '../../models/palet_state.dart';
+import '../../providers/palet_provider.dart';
 import '../../theme.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/scoreboard_actions.dart';
 import '../../widgets/winner_banner.dart';
 
-class TichuScoreboardScreen extends ConsumerWidget {
-  const TichuScoreboardScreen({super.key});
+class PaletScoreboardScreen extends ConsumerWidget {
+  const PaletScoreboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final state = ref.watch(tichuProvider);
-    if (state.phase == TichuPhase.setup) return const RedirectHome();
+    final state = ref.watch(paletProvider);
+    if (state.phase == PaletPhase.setup) return const RedirectHome();
 
-    final isFinished = state.phase == TichuPhase.finished;
+    final isFinished = state.phase == PaletPhase.finished;
     final aWins = state.teamATotal >= state.teamBTotal;
     final winner = aWins ? state.teamALabel : state.teamBLabel;
 
@@ -27,13 +27,11 @@ class TichuScoreboardScreen extends ConsumerWidget {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            isFinished ? l.tichuFinishedTitle : l.tichuScoresTitle,
-          ),
+          title: Text(isFinished ? l.paletFinishedTitle : l.paletScoresTitle),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
-              ref.read(tichuProvider.notifier).reset();
+              ref.read(paletProvider.notifier).reset();
               context.go('/');
             },
           ),
@@ -61,17 +59,17 @@ class TichuScoreboardScreen extends ConsumerWidget {
                   isFinished: isFinished,
                   canUndo: state.completedRounds.isNotEmpty,
                   onNextRound: () {
-                    ref.read(tichuProvider.notifier).nextRound();
-                    context.go('/tichu/round');
+                    ref.read(paletProvider.notifier).nextRound();
+                    context.go('/palet/round');
                   },
                   onUndoRound: () {
-                    ref.read(tichuProvider.notifier).undoLastRound();
-                    context.go('/tichu/round');
+                    ref.read(paletProvider.notifier).undoLastRound();
+                    context.go('/palet/round');
                   },
                   onSave: () =>
-                      ref.read(tichuProvider.notifier).saveToHistory(),
+                      ref.read(paletProvider.notifier).saveToHistory(),
                   onHome: () {
-                    ref.read(tichuProvider.notifier).reset();
+                    ref.read(paletProvider.notifier).reset();
                     context.go('/');
                   },
                   shareTextBuilder: () {
@@ -79,7 +77,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
                       (name: state.teamALabel, score: state.teamATotal),
                       (name: state.teamBLabel, score: state.teamBTotal),
                     ]..sort((a, b) => b.score.compareTo(a.score));
-                    return buildShareText(l, l.gameTichu, teams);
+                    return buildShareText(l, l.gamePalet, teams);
                   },
                 ),
               ),
@@ -92,7 +90,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
 }
 
 class _TeamScoreCard extends StatelessWidget {
-  final TichuGameState state;
+  final PaletGameState state;
   const _TeamScoreCard({required this.state});
 
   @override
@@ -183,7 +181,7 @@ class _TeamScore extends StatelessWidget {
 }
 
 class _RoundHistoryCard extends StatelessWidget {
-  final TichuGameState state;
+  final PaletGameState state;
   const _RoundHistoryCard({required this.state});
 
   @override
@@ -204,8 +202,6 @@ class _RoundHistoryCard extends StatelessWidget {
             ...state.completedRounds.asMap().entries.map((e) {
               final i = e.key;
               final r = e.value;
-              final aScore = state.roundTeamAScore(r);
-              final bScore = state.roundTeamBScore(r);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
@@ -217,21 +213,9 @@ class _RoundHistoryCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        r.sweep == TichuSweep.none
-                            ? l.cardPointsShort(r.teamACardPoints)
-                            : l.doubleVictoryTeam(
-                                r.sweep == TichuSweep.teamA
-                                    ? state.teamALabel
-                                    : state.teamBLabel,
-                              ),
-                        style: Theme.of(context).textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+                    const Spacer(),
                     Text(
-                      '${aScore >= 0 ? '+' : ''}$aScore',
+                      '+${r.teamAPoints}',
                       style: const TextStyle(
                         color: teamAColor,
                         fontWeight: FontWeight.bold,
@@ -240,7 +224,7 @@ class _RoundHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${bScore >= 0 ? '+' : ''}$bScore',
+                      '+${r.teamBPoints}',
                       style: const TextStyle(
                         color: teamBColor,
                         fontWeight: FontWeight.bold,

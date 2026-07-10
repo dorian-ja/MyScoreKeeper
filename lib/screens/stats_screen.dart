@@ -5,6 +5,7 @@ import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
+import '../widgets/game_thumbnail.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -169,16 +170,7 @@ class _GlobalCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.asset(
-                        e.key.imagePath,
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.cover,
-                        semanticLabel: e.key.label(l),
-                      ),
-                    ),
+                    GameThumbnail(game: e.key, size: 24, borderRadius: 6),
                     const SizedBox(width: 10),
                     Expanded(child: Text(e.key.label(l))),
                     Text(
@@ -372,16 +364,7 @@ class _GameWinsBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: Image.asset(
-            gameType.imagePath,
-            width: 16,
-            height: 16,
-            fit: BoxFit.cover,
-            semanticLabel: gameType.label(AppLocalizations.of(context)),
-          ),
-        ),
+        GameThumbnail(game: gameType, size: 16, borderRadius: 4),
         const SizedBox(width: 3),
         Text(
           '$count',

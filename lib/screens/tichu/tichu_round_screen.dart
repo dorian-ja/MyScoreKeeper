@@ -233,7 +233,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                     // Équipe A
                     _TeamAnnouncementSection(
                       teamLabel: teamALabel,
-                      color: tichuTeamAColor,
+                      color: teamAColor,
                       players: state.teamAPlayers,
                       announcements: _announcements,
                       success: _success,
@@ -247,7 +247,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                     // Équipe B
                     _TeamAnnouncementSection(
                       teamLabel: teamBLabel,
-                      color: tichuTeamBColor,
+                      color: teamBColor,
                       players: state.teamBPlayers,
                       announcements: _announcements,
                       success: _success,

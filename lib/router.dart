@@ -14,6 +14,12 @@ import 'screens/tichu/tichu_scoreboard_screen.dart';
 import 'screens/dame_de_pique/ddp_setup_screen.dart';
 import 'screens/dame_de_pique/ddp_round_screen.dart';
 import 'screens/dame_de_pique/ddp_scoreboard_screen.dart';
+import 'screens/palet/palet_setup_screen.dart';
+import 'screens/palet/palet_round_screen.dart';
+import 'screens/palet/palet_scoreboard_screen.dart';
+import 'screens/molkky/molkky_setup_screen.dart';
+import 'screens/molkky/molkky_play_screen.dart';
+import 'screens/molkky/molkky_scoreboard_screen.dart';
 import 'screens/generic/generic_setup_screen.dart';
 import 'screens/generic/generic_round_screen.dart';
 import 'screens/generic/generic_scoreboard_screen.dart';
@@ -66,6 +72,28 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/dame-de-pique/scoreboard',
       builder: (_, __) => const DdpScoreboardScreen(),
+    ),
+
+    // Palet
+    GoRoute(path: '/palet/setup', builder: (_, __) => const PaletSetupScreen()),
+    GoRoute(path: '/palet/round', builder: (_, __) => const PaletRoundScreen()),
+    GoRoute(
+      path: '/palet/scoreboard',
+      builder: (_, __) => const PaletScoreboardScreen(),
+    ),
+
+    // Mölkky
+    GoRoute(
+      path: '/molkky/setup',
+      builder: (_, __) => const MolkkySetupScreen(),
+    ),
+    GoRoute(
+      path: '/molkky/play',
+      builder: (_, __) => const MolkkyPlayScreen(),
+    ),
+    GoRoute(
+      path: '/molkky/scoreboard',
+      builder: (_, __) => const MolkkyScoreboardScreen(),
     ),
 
     // Autre (générique)
