@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 // ambre chaud (accent), parchemin crème (surfaces), encre brune (texte).
 const _primary = Color(0xFFC8752E);
 
-// Couleurs d'équipe (Tichu), assorties à la palette parchemin :
-// rouille du dragon Tichu et bleu-gris de l'icône « Autre ».
-const tichuTeamAColor = Color(0xFF9C4A1E);
-const tichuTeamBColor = Color(0xFF305868);
+// Couleurs d'équipe (jeux à 2 équipes : Tichu, Palet), assorties à la
+// palette parchemin : rouille du dragon Tichu et bleu-gris de l'icône « Autre ».
+const teamAColor = Color(0xFF9C4A1E);
+const teamBColor = Color(0xFF305868);
 const _parchmentLight = Color(0xFFFAF3E4);
 const _inkLight = Color(0xFF3A2A1D);
 const _parchmentDark = Color(0xFF241A12);

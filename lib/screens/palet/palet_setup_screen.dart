@@ -4,28 +4,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
-import '../../models/tichu_state.dart';
-import '../../providers/tichu_provider.dart';
+import '../../models/palet_state.dart';
+import '../../providers/palet_provider.dart';
 import '../../services/player_names_store.dart';
-import '../../utils/player_names.dart';
 import '../../theme.dart';
+import '../../utils/player_names.dart';
+import '../../widgets/number_stepper.dart';
 
-class TichuSetupScreen extends ConsumerStatefulWidget {
-  const TichuSetupScreen({super.key});
+class PaletSetupScreen extends ConsumerStatefulWidget {
+  const PaletSetupScreen({super.key});
 
   @override
-  ConsumerState<TichuSetupScreen> createState() => _TichuSetupScreenState();
+  ConsumerState<PaletSetupScreen> createState() => _PaletSetupScreenState();
 }
 
-class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
-  TichuMode _mode = TichuMode.nankin;
+class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
+  static const _maxTeamSize = 6;
 
-  // 6 contrôleurs au maximum (2 ou 3 par équipe selon le mode)
-  final _controllers = List.generate(6, (i) => TextEditingController());
-  final _targetCtrl = TextEditingController(text: '1000');
+  PaletMode _mode = PaletMode.breton;
+  int _teamSize = 2;
 
-  int get _teamSize => _mode == TichuMode.nankin ? 2 : 3;
-  int get _totalPlayers => _teamSize * 2;
+  // Contrôleurs préalloués au max, indexés par bloc : [0, max) = équipe A,
+  // [max, 2*max) = équipe B. Stables quand _teamSize change (pas de perte
+  // de saisie).
+  final _controllers = List.generate(
+    _maxTeamSize * 2,
+    (i) => TextEditingController(),
+  );
+  final _targetCtrl = TextEditingController(text: '500');
 
   @override
   void initState() {
@@ -35,12 +41,17 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
 
   Future<void> _loadLastNames() async {
     final names = await PlayerNamesStore.load(
-      '${GameType.tichu.name}_${_mode.name}',
+      '${GameType.palet.name}_${_mode.name}',
     );
     if (!mounted || names == null || names.isEmpty) return;
+    final size = (names.length ~/ 2).clamp(1, _maxTeamSize);
     setState(() {
-      for (var i = 0; i < names.length && i < 6; i++) {
+      _teamSize = size;
+      for (var i = 0; i < size && i < names.length; i++) {
         _controllers[i].text = names[i];
+      }
+      for (var i = 0; i < size && size + i < names.length; i++) {
+        _controllers[_maxTeamSize + i].text = names[size + i];
       }
     });
   }
@@ -57,29 +68,30 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
   void _startGame() {
     final l = AppLocalizations.of(context);
     final rawNames = [
-      for (var i = 0; i < _totalPlayers; i++) _controllers[i].text.trim(),
+      for (var i = 0; i < _teamSize; i++) _controllers[i].text.trim(),
+      for (var i = 0; i < _teamSize; i++)
+        _controllers[_maxTeamSize + i].text.trim(),
     ];
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
-    PlayerNamesStore.save(
-      '${GameType.tichu.name}_${_mode.name}',
-      rawNames,
-    );
-    final target = int.tryParse(_targetCtrl.text) ?? 1000;
-    ref.read(tichuProvider.notifier).startGame(players, target, _mode);
-    context.go('/tichu/round');
+    PlayerNamesStore.save('${GameType.palet.name}_${_mode.name}', rawNames);
+    final target = int.tryParse(_targetCtrl.text) ?? 500;
+    ref
+        .read(paletProvider.notifier)
+        .startGame(players, target, _mode, _teamSize);
+    context.go('/palet/round');
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l.tichuSetupTitle)),
+      appBar: AppBar(title: Text(l.paletSetupTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Sélecteur de mode
+            // Variante
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -91,17 +103,15 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    SegmentedButton<TichuMode>(
+                    SegmentedButton<PaletMode>(
                       segments: [
                         ButtonSegment(
-                          value: TichuMode.nankin,
-                          label: Text(l.tichuNankinLabel),
-                          icon: const Icon(Icons.group, size: 18),
+                          value: PaletMode.breton,
+                          label: Text(l.paletModeBreton),
                         ),
                         ButtonSegment(
-                          value: TichuMode.tientsin,
-                          label: Text(l.tichuTientsinLabel),
-                          icon: const Icon(Icons.groups, size: 18),
+                          value: PaletMode.vendeen,
+                          label: Text(l.paletModeVendeen),
                         ),
                       ],
                       selected: {_mode},
@@ -110,8 +120,28 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                         _loadLastNames();
                       },
                     ),
-                    const SizedBox(height: 12),
-                    _RuleHintCard(mode: _mode),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Taille d'équipe
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l.paletTeamSize,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    NumberStepper(
+                      value: _teamSize,
+                      min: 1,
+                      max: _maxTeamSize,
+                      onChanged: (v) => setState(() => _teamSize = v),
+                    ),
                   ],
                 ),
               ),
@@ -131,7 +161,10 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
             _TeamSection(
               teamLabel: l.teamB,
               color: teamBColor,
-              controllers: _controllers.sublist(_teamSize, _totalPlayers),
+              controllers: _controllers.sublist(
+                _maxTeamSize,
+                _maxTeamSize + _teamSize,
+              ),
               playerOffset: _teamSize,
             ),
             const SizedBox(height: 16),
@@ -160,7 +193,6 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                       decoration: InputDecoration(
                         labelText: l.targetScore,
                         suffixText: l.pointsSuffix,
-                        hintText: l.targetScoreHint,
                       ),
                     ),
                   ],
@@ -175,67 +207,6 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Encart de rappel des différences de règles selon le mode
-class _RuleHintCard extends StatelessWidget {
-  final TichuMode mode;
-  const _RuleHintCard({required this.mode});
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final hints = mode == TichuMode.nankin
-        ? [
-            l.tichuNankinHint1,
-            l.tichuNankinHint2,
-            l.tichuNankinHint3,
-            l.tichuNankinHint4,
-          ]
-        : [
-            l.tichuTientsinHint1,
-            l.tichuTientsinHint2,
-            l.tichuTientsinHint3,
-            l.tichuTientsinHint4,
-            l.tichuTientsinHint5,
-          ];
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: hints
-            .map(
-              (h) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '• ',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
-                    Expanded(
-                      child: Text(
-                        h,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList(),
       ),
     );
   }

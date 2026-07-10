@@ -8,6 +8,7 @@ import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
+import '../widgets/game_thumbnail.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -300,16 +301,7 @@ class _HistoryTile extends StatelessWidget {
               horizontal: 16,
               vertical: 8,
             ),
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                entry.gameType.imagePath,
-                width: 40,
-                height: 40,
-                fit: BoxFit.cover,
-                semanticLabel: entry.gameType.label(l),
-              ),
-            ),
+            leading: GameThumbnail(game: entry.gameType, size: 40),
             title: Text(
               entry.gameType.label(l),
               style: const TextStyle(fontWeight: FontWeight.bold),

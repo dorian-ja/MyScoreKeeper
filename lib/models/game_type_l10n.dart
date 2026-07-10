@@ -8,6 +8,7 @@ extension GameTypeL10n on GameType {
     GameType.skullKing => l.gameSkullKing,
     GameType.tichu => l.gameTichu,
     GameType.dameDepique => l.gameDameDePique,
+    GameType.palet => l.gamePalet,
     GameType.autre => l.gameAutre,
   };
 
@@ -15,6 +16,7 @@ extension GameTypeL10n on GameType {
     GameType.skullKing => l.subtitleSkullKing,
     GameType.tichu => l.subtitleTichu,
     GameType.dameDepique => l.subtitleDameDePique,
+    GameType.palet => l.subtitlePalet,
     GameType.autre => l.subtitleAutre,
   };
 }

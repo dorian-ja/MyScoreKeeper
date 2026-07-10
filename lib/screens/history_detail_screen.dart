@@ -191,6 +191,8 @@ class _RoundCard extends StatelessWidget {
         return _TichuRound(data: roundData, players: entry.playerOrTeamNames);
       case 'dameDepique':
         return _DdpRound(data: roundData, players: entry.playerOrTeamNames);
+      case 'palet':
+        return _PaletRound(data: roundData);
       case 'autre':
         return _GenericRound(data: roundData, players: entry.playerOrTeamNames);
       default:
@@ -252,6 +254,19 @@ class _TichuRound extends StatelessWidget {
           Text(l.tichuCardPointsSummary(teamAPoints, 100 - teamAPoints)),
       ],
     );
+  }
+}
+
+class _PaletRound extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _PaletRound({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final a = data['teamAPoints'] as int? ?? 0;
+    final b = data['teamBPoints'] as int? ?? 0;
+    return Text(l.paletRoundSummary(a, b));
   }
 }
 

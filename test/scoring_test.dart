@@ -3,6 +3,7 @@ import 'package:my_score_keeper/models/dame_de_pique_state.dart';
 import 'package:my_score_keeper/models/game_history.dart';
 import 'package:my_score_keeper/models/game_type.dart';
 import 'package:my_score_keeper/models/generic_state.dart';
+import 'package:my_score_keeper/models/palet_state.dart';
 import 'package:my_score_keeper/models/skull_king_state.dart';
 import 'package:my_score_keeper/models/tichu_state.dart';
 import 'package:my_score_keeper/screens/stats_screen.dart';
@@ -180,6 +181,48 @@ void main() {
         ],
       );
       expect(state.hasReachedThreshold, true);
+    });
+  });
+
+  group('Palet', () {
+    test('cumul des points par équipe, taille libre', () {
+      final state = PaletGameState(
+        players: const ['A1', 'A2', 'A3', 'B1', 'B2', 'B3'],
+        teamSize: 3,
+        targetScore: 500,
+        completedRounds: const [
+          PaletRoundData(teamAPoints: 6, teamBPoints: 0),
+          PaletRoundData(teamAPoints: 0, teamBPoints: 3),
+        ],
+      );
+      expect(state.teamAPlayers, ['A1', 'A2', 'A3']);
+      expect(state.teamBPlayers, ['B1', 'B2', 'B3']);
+      expect(state.teamATotal, 6);
+      expect(state.teamBTotal, 3);
+      expect(state.hasReachedTarget, false);
+    });
+
+    test('score cible atteint', () {
+      final state = PaletGameState(
+        players: const ['A', 'B'],
+        teamSize: 1,
+        targetScore: 10,
+        completedRounds: const [
+          PaletRoundData(teamAPoints: 6),
+          PaletRoundData(teamAPoints: 5),
+        ],
+      );
+      expect(state.teamATotal, 11);
+      expect(state.hasReachedTarget, true);
+    });
+
+    test('labels d\'équipe générés à partir des noms', () {
+      final state = PaletGameState(
+        players: const ['Alice', 'Bob', 'Carla', 'Dan'],
+        teamSize: 2,
+      );
+      expect(state.teamALabel, 'Alice & Bob');
+      expect(state.teamBLabel, 'Carla & Dan');
     });
   });
 
@@ -372,6 +415,27 @@ void main() {
       expect(restored.threshold, 75);
       expect(restored.phase, DdpPhase.scoreboard);
       expect(restored.totalScore('A'), 13);
+    });
+
+    test('PaletGameState round-trip JSON', () {
+      final state = PaletGameState(
+        players: const ['A1', 'A2', 'B1', 'B2'],
+        teamSize: 2,
+        targetScore: 500,
+        mode: PaletMode.vendeen,
+        phase: PaletPhase.scoreboard,
+        currentRound: 3,
+        completedRounds: const [
+          PaletRoundData(teamAPoints: 4, teamBPoints: 0),
+        ],
+      );
+      final restored = PaletGameState.fromJson(state.toJson());
+      expect(restored.teamSize, 2);
+      expect(restored.targetScore, 500);
+      expect(restored.mode, PaletMode.vendeen);
+      expect(restored.phase, PaletPhase.scoreboard);
+      expect(restored.currentRound, 3);
+      expect(restored.teamATotal, state.teamATotal);
     });
 
     test('GenericGameState round-trip JSON (limites null conservées)', () {

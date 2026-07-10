@@ -6,12 +6,15 @@ import '../models/dame_de_pique_state.dart';
 import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../models/generic_state.dart';
+import '../models/palet_state.dart';
 import '../models/skull_king_state.dart';
 import '../models/tichu_state.dart';
 import '../providers/dame_de_pique_provider.dart';
 import '../providers/generic_provider.dart';
+import '../providers/palet_provider.dart';
 import '../providers/skull_king_provider.dart';
 import '../providers/tichu_provider.dart';
+import '../widgets/game_thumbnail.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -72,6 +75,26 @@ class HomeScreen extends ConsumerWidget {
               ? '/dame-de-pique/round'
               : '/dame-de-pique/scoreboard',
           discard: () => ref.read(dameDepiqueProvider.notifier).reset(),
+        ),
+      );
+    }
+
+    final palet = ref.watch(paletProvider);
+    if (palet.phase != PaletPhase.setup) {
+      result.add(
+        _ResumeInfo(
+          type: GameType.palet,
+          detail: palet.phase == PaletPhase.finished
+              ? l.gameFinishedUnsaved
+              : l.paletResumeDetail(
+                  palet.currentRound,
+                  palet.teamATotal,
+                  palet.teamBTotal,
+                ),
+          route: palet.phase == PaletPhase.round
+              ? '/palet/round'
+              : '/palet/scoreboard',
+          discard: () => ref.read(paletProvider.notifier).reset(),
         ),
       );
     }
@@ -150,6 +173,8 @@ class HomeScreen extends ConsumerWidget {
                     _GameCard(game: GameType.tichu),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.dameDepique),
+                    const SizedBox(height: 12),
+                    _GameCard(game: GameType.palet),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.autre),
                     const SizedBox(height: 24),
@@ -249,16 +274,7 @@ class _ResumeCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  info.type.imagePath,
-                  width: 44,
-                  height: 44,
-                  fit: BoxFit.cover,
-                  semanticLabel: info.type.label(l),
-                ),
-              ),
+              GameThumbnail(game: info.type, size: 44, borderRadius: 10),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -314,6 +330,8 @@ class _GameCard extends StatelessWidget {
         return '/tichu/setup';
       case GameType.dameDepique:
         return '/dame-de-pique/setup';
+      case GameType.palet:
+        return '/palet/setup';
       case GameType.autre:
         return '/autre/setup';
     }
@@ -333,16 +351,7 @@ class _GameCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  game.imagePath,
-                  width: 56,
-                  height: 56,
-                  fit: BoxFit.cover,
-                  semanticLabel: game.label(l),
-                ),
-              ),
+              GameThumbnail(game: game, size: 56, borderRadius: 12),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

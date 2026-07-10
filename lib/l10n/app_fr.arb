@@ -32,10 +32,12 @@
   "gameSkullKing": "Skull King",
   "gameTichu": "Tichu",
   "gameDameDePique": "Dame de Pique",
+  "gamePalet": "Palet",
   "gameAutre": "Autre",
   "subtitleSkullKing": "2–8 joueurs • 10 manches",
   "subtitleTichu": "4 joueurs • 2 équipes",
   "subtitleDameDePique": "4 joueurs • cartes",
+  "subtitlePalet": "Breton ou Vendéen • 2 équipes",
   "subtitleAutre": "Comptage de points personnalisé",
 
   "currentGame": "Partie en cours",
@@ -49,6 +51,8 @@
   "@ddpResumeDetail": { "placeholders": { "round": { "type": "int" }, "threshold": { "type": "int" } } },
   "genericResumeDetail": "Manche {round} • {count} joueurs",
   "@genericResumeDetail": { "placeholders": { "round": { "type": "int" }, "count": { "type": "int" } } },
+  "paletResumeDetail": "Manche {round} • {a} / {b} pts",
+  "@paletResumeDetail": { "placeholders": { "round": { "type": "int" }, "a": { "type": "int" }, "b": { "type": "int" } } },
   "discardGameTitle": "Abandonner la partie ?",
   "discardGameBody": "La partie en cours sera définitivement perdue.",
   "discard": "Abandonner",
@@ -160,6 +164,11 @@
   "deleteTemplateTitle": "Supprimer « {name} » ?",
   "@deleteTemplateTitle": { "placeholders": { "name": { "type": "String" } } },
 
+  "paletSetupTitle": "Palet — Configuration",
+  "paletModeBreton": "Breton",
+  "paletModeVendeen": "Vendéen",
+  "paletTeamSize": "Joueurs par équipe",
+
   "skRoundTitle": "Skull King — Manche {round}/10",
   "@skRoundTitle": { "placeholders": { "round": { "type": "int" } } },
   "skCardsBids": "{round, plural, =1{{round} carte par joueur — Enchères} other{{round} cartes par joueur — Enchères}}",
@@ -224,6 +233,12 @@
   "doubleVictoryTeam": "Double victoire {team}",
   "@doubleVictoryTeam": { "placeholders": { "team": { "type": "String" } } },
 
+  "paletRoundTitle": "Palet — Manche {round}",
+  "@paletRoundTitle": { "placeholders": { "round": { "type": "int" } } },
+  "paletPointsLabel": "Points marqués",
+  "paletFinishedTitle": "Palet — Partie terminée",
+  "paletScoresTitle": "Palet — Scores",
+
   "ddpRoundTitle": "Dame de Pique — Manche {round}",
   "@ddpRoundTitle": { "placeholders": { "round": { "type": "int" } } },
   "moonShotQuestion": "Ramassage général ?",
@@ -275,6 +290,8 @@
   "@tichuDoubleVictorySummary": { "placeholders": { "name": { "type": "String" } } },
   "tichuCardPointsSummary": "Points cartes — Éq. A: {a} / Éq. B: {b}",
   "@tichuCardPointsSummary": { "placeholders": { "a": { "type": "int" }, "b": { "type": "int" } } },
+  "paletRoundSummary": "Éq. A: {a} pts  Éq. B: {b} pts",
+  "@paletRoundSummary": { "placeholders": { "a": { "type": "int" }, "b": { "type": "int" } } },
 
   "shareWinLine": "🏆 {winner} remporte la partie de {game} !",
   "@shareWinLine": { "placeholders": { "winner": { "type": "String" }, "game": { "type": "String" } } },
