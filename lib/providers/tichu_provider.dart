@@ -5,7 +5,6 @@ import '../models/tichu_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../services/game_persistence.dart';
-import '../services/player_names_store.dart';
 import 'history_provider.dart';
 
 final tichuProvider = StateNotifierProvider<TichuNotifier, TichuGameState>((
@@ -66,7 +65,6 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
       currentRound: 1,
       mode: mode,
     );
-    PlayerNamesStore.save('${GameType.tichu.name}_${mode.name}', players);
     _enableWakelock();
     _persist();
   }

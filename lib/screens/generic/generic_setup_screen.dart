@@ -163,10 +163,12 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
 
   void _startGame() {
     final l = AppLocalizations.of(context);
-    final players = resolvePlayerNames([
-      for (var i = 0; i < _playerCount; i++) _nameControllers[i].text,
-    ], defaultName: l.playerLabel);
+    final rawNames = [
+      for (var i = 0; i < _playerCount; i++) _nameControllers[i].text.trim(),
+    ];
+    final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
+    PlayerNamesStore.save(GameType.autre.name, rawNames);
     final maxScore = _useMaxScore
         ? int.tryParse(_maxScoreCtrl.text) ?? 100
         : null;

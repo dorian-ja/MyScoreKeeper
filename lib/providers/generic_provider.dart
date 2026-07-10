@@ -5,7 +5,6 @@ import '../models/generic_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../services/game_persistence.dart';
-import '../services/player_names_store.dart';
 import 'history_provider.dart';
 
 final genericGameProvider =
@@ -70,7 +69,6 @@ class GenericGameNotifier extends StateNotifier<GenericGameState> {
       phase: GenericPhase.round,
       completedRounds: [],
     );
-    PlayerNamesStore.save(GameType.autre.name, players);
     _enableWakelock();
     _persist();
   }

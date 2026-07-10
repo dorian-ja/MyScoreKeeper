@@ -56,10 +56,15 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
 
   void _startGame() {
     final l = AppLocalizations.of(context);
-    final players = resolvePlayerNames([
-      for (var i = 0; i < _totalPlayers; i++) _controllers[i].text,
-    ], defaultName: l.playerLabel);
+    final rawNames = [
+      for (var i = 0; i < _totalPlayers; i++) _controllers[i].text.trim(),
+    ];
+    final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
+    PlayerNamesStore.save(
+      '${GameType.tichu.name}_${_mode.name}',
+      rawNames,
+    );
     final target = int.tryParse(_targetCtrl.text) ?? 1000;
     ref.read(tichuProvider.notifier).startGame(players, target, _mode);
     context.go('/tichu/round');

@@ -5,7 +5,6 @@ import '../models/dame_de_pique_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../services/game_persistence.dart';
-import '../services/player_names_store.dart';
 import 'history_provider.dart';
 
 final dameDepiqueProvider =
@@ -63,7 +62,6 @@ class DameDepiqueNotifier extends StateNotifier<DdpGameState> {
       phase: DdpPhase.round,
       completedRounds: [],
     );
-    PlayerNamesStore.save(GameType.dameDepique.name, players);
     _enableWakelock();
     _persist();
   }

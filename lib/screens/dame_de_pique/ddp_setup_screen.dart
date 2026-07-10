@@ -46,10 +46,12 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
 
   void _startGame() {
     final l = AppLocalizations.of(context);
-    final players = resolvePlayerNames([
-      for (var i = 0; i < 4; i++) _controllers[i].text,
-    ], defaultName: l.playerLabel);
+    final rawNames = [
+      for (var i = 0; i < 4; i++) _controllers[i].text.trim(),
+    ];
+    final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
+    PlayerNamesStore.save(GameType.dameDepique.name, rawNames);
     final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
     ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
     context.go('/dame-de-pique/round');

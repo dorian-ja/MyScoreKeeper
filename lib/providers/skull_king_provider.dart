@@ -5,7 +5,6 @@ import '../models/skull_king_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../services/game_persistence.dart';
-import '../services/player_names_store.dart';
 import 'history_provider.dart';
 
 final skullKingProvider = StateNotifierProvider<SkullKingNotifier, SkGameState>(
@@ -67,7 +66,6 @@ class SkullKingNotifier extends StateNotifier<SkGameState> {
       currentIsBoulet: {},
       scoringMode: scoringMode,
     );
-    PlayerNamesStore.save(GameType.skullKing.name, players);
     _enableWakelock();
     _persist();
   }
