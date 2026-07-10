@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 class QuitGameButton extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -9,27 +10,26 @@ class QuitGameButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.home_outlined),
-      tooltip: 'Menu principal',
+      tooltip: AppLocalizations.of(context).mainMenu,
       onPressed: () => _confirm(context),
     );
   }
 
   Future<void> _confirm(BuildContext context) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Quitter la partie ?'),
-        content: const Text(
-          'La progression de cette partie ne sera pas sauvegardée.',
-        ),
+        title: Text(l.quitGameTitle),
+        content: Text(l.quitGameBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Continuer'),
+            child: Text(l.continueButton),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Quitter'),
+            child: Text(l.quit),
           ),
         ],
       ),

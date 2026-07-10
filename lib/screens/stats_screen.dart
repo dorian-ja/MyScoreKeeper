@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
+import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
 
 class StatsScreen extends ConsumerWidget {
@@ -9,10 +11,11 @@ class StatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final history = ref.watch(historyProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistiques')),
+      appBar: AppBar(title: Text(l.statistics)),
       body: history.isEmpty
           ? Center(
               child: Column(
@@ -25,7 +28,7 @@ class StatsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Sauvegardez des parties pour voir vos statistiques',
+                    l.statsEmpty,
                     style: Theme.of(context).textTheme.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
@@ -99,6 +102,7 @@ class _GlobalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final byType = <GameType, int>{};
     for (final e in history) {
       byType[e.gameType] = (byType[e.gameType] ?? 0) + 1;
@@ -134,7 +138,7 @@ class _GlobalCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Parties jouées',
+                  l.gamesPlayed,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const Spacer(),
@@ -150,14 +154,14 @@ class _GlobalCard extends StatelessWidget {
             const SizedBox(height: 4),
             _MiniStatRow(
               icon: Icons.repeat,
-              label: 'Manches jouées',
+              label: l.roundsPlayed,
               value: '$totalRounds',
             ),
             if (mostActive != null)
               _MiniStatRow(
                 icon: Icons.person,
-                label: 'Joueur le plus actif',
-                value: '$mostActive ($mostActiveCount)',
+                label: l.mostActivePlayer,
+                value: l.mostActiveValue(mostActive!, mostActiveCount),
               ),
             const Divider(height: 24),
             ...sortedTypes.map(
@@ -172,13 +176,13 @@ class _GlobalCard extends StatelessWidget {
                         width: 24,
                         height: 24,
                         fit: BoxFit.cover,
-                        semanticLabel: e.key.displayName,
+                        semanticLabel: e.key.label(l),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(e.key.displayName)),
+                    Expanded(child: Text(e.key.label(l))),
                     Text(
-                      '${e.value} partie${e.value > 1 ? 's' : ''}',
+                      l.gamesCount(e.value),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -230,6 +234,7 @@ class _PlayersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final stats = computePlayerStats(history);
 
     return Card(
@@ -239,12 +244,12 @@ class _PlayersCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Joueurs & équipes',
+              l.playersAndTeams,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'Victoires / parties jouées',
+              l.winsOverPlayed,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -262,6 +267,7 @@ class _PlayerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final winsByGame = stats.winsByGame.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -316,7 +322,7 @@ class _PlayerRow extends StatelessWidget {
               if (stats.bestStreak >= 2)
                 _Badge(
                   icon: Icons.local_fire_department,
-                  label: 'Série : ${stats.bestStreak}',
+                  label: l.streakBadge(stats.bestStreak),
                   color: scheme.tertiary,
                 ),
               ...winsByGame.map(
@@ -373,7 +379,7 @@ class _GameWinsBadge extends StatelessWidget {
             width: 16,
             height: 16,
             fit: BoxFit.cover,
-            semanticLabel: gameType.displayName,
+            semanticLabel: gameType.label(AppLocalizations.of(context)),
           ),
         ),
         const SizedBox(width: 3),

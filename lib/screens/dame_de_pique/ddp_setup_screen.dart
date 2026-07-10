@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../providers/dame_de_pique_provider.dart';
 import '../../services/player_names_store.dart';
@@ -15,10 +16,7 @@ class DdpSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
-  final _controllers = List.generate(
-    4,
-    (i) => TextEditingController(text: 'Joueur ${i + 1}'),
-  );
+  final _controllers = List.generate(4, (i) => TextEditingController());
   final _thresholdCtrl = TextEditingController(text: '100');
 
   @override
@@ -47,9 +45,10 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
   }
 
   void _startGame() {
+    final l = AppLocalizations.of(context);
     final players = resolvePlayerNames([
       for (var i = 0; i < 4; i++) _controllers[i].text,
-    ]);
+    ], defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
     ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
@@ -58,13 +57,14 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Dame de Pique — Configuration')),
+      appBar: AppBar(title: Text(l.ddpSetupTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Joueurs', style: Theme.of(context).textTheme.titleMedium),
+            Text(l.players, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...List.generate(4, (i) {
               return Padding(
@@ -72,7 +72,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                 child: TextFormField(
                   controller: _controllers[i],
                   decoration: InputDecoration(
-                    labelText: 'Joueur ${i + 1}',
+                    labelText: l.playerLabel(i + 1),
                     prefixIcon: const Icon(Icons.person_outline),
                   ),
                   textCapitalization: TextCapitalization.words,
@@ -87,12 +87,12 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Seuil de fin de partie',
+                      l.endThreshold,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'La partie s\'arrête quand un joueur atteint ce score.',
+                      l.endThresholdDesc,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -100,9 +100,9 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: const InputDecoration(
-                        labelText: 'Score seuil',
-                        suffixText: 'points',
+                      decoration: InputDecoration(
+                        labelText: l.thresholdScoreLabel,
+                        suffixText: l.pointsSuffix,
                       ),
                     ),
                   ],
@@ -112,7 +112,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
             const SizedBox(height: 24),
             FilledButton.icon(
               icon: const Icon(Icons.play_arrow),
-              label: const Text('Commencer la partie'),
+              label: Text(l.startGame),
               onPressed: _startGame,
             ),
           ],

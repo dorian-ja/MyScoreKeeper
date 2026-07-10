@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/generic_state.dart';
 import '../../providers/generic_provider.dart';
 import '../../widgets/quit_game_button.dart';
@@ -14,6 +15,7 @@ class GenericScoreboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(genericGameProvider);
     if (state.phase == GenericPhase.setup) return const RedirectHome();
 
@@ -24,7 +26,9 @@ class GenericScoreboardScreen extends ConsumerWidget {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isFinished ? 'Autre — Fin' : 'Autre — Scores'),
+          title: Text(
+            isFinished ? l.genericFinishedTitle : l.genericScoresTitle,
+          ),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
@@ -43,9 +47,7 @@ class GenericScoreboardScreen extends ConsumerWidget {
                     if (isFinished) ...[
                       WinnerBanner(
                         winner: ranked.first,
-                        label: state.higherWins
-                            ? 'Vainqueur'
-                            : 'Vainqueur (moins de points)',
+                        label: state.higherWins ? l.winner : l.winnerLowest,
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -85,7 +87,7 @@ class GenericScoreboardScreen extends ConsumerWidget {
                       : () => ref
                             .read(genericGameProvider.notifier)
                             .endGameManually(),
-                  shareTextBuilder: () => buildShareText('notre partie', [
+                  shareTextBuilder: () => buildShareText(l, l.ourGame, [
                     for (final p in ranked)
                       (name: p, score: state.totalScore(p)),
                   ]),
@@ -105,11 +107,12 @@ class _ScoreTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final ranked = state.rankedPlayers;
     final hasScores = state.completedRounds.isNotEmpty;
     final limitParts = <String>[
-      if (state.maxScore != null) 'Score max : ${state.maxScore} pts',
-      if (state.maxRounds != null) 'Manches max : ${state.maxRounds}',
+      if (state.maxScore != null) l.scoreMaxLabel(state.maxScore!),
+      if (state.maxRounds != null) l.roundsMaxLabel(state.maxRounds!),
     ];
     return Card(
       child: Padding(
@@ -119,10 +122,10 @@ class _ScoreTable extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('Scores', style: Theme.of(context).textTheme.titleMedium),
+                Text(l.scores, style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 Text(
-                  state.higherWins ? 'Plus haut gagne' : 'Plus bas gagne',
+                  state.higherWins ? l.higherWins : l.lowerWins,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -151,7 +154,7 @@ class _ScoreTable extends StatelessWidget {
                     ),
                     Expanded(child: Text(isLeader ? '$player 👑' : player)),
                     Text(
-                      '$total pts',
+                      l.points(total),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,

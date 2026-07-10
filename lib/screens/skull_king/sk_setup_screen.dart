@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
@@ -23,10 +24,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(
-      8,
-      (i) => TextEditingController(text: 'Joueur ${i + 1}'),
-    );
+    _controllers = List.generate(8, (i) => TextEditingController());
     _loadLastNames();
   }
 
@@ -50,9 +48,10 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
   }
 
   void _startGame() {
+    final l = AppLocalizations.of(context);
     final players = resolvePlayerNames([
       for (var i = 0; i < _playerCount; i++) _controllers[i].text,
-    ]);
+    ], defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     ref.read(skullKingProvider.notifier).startGame(players, _scoringMode);
     context.go('/skull-king/bid');
@@ -60,8 +59,9 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Skull King — Configuration')),
+      appBar: AppBar(title: Text(l.skSetupTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -74,21 +74,21 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Système de score',
+                      l.scoringSystem,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
                     SegmentedButton<SkScoringMode>(
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: SkScoringMode.skullKing,
-                          label: Text('Skull King'),
-                          icon: Icon(Icons.star_outlined, size: 18),
+                          label: Text(l.scoringSkullKing),
+                          icon: const Icon(Icons.star_outlined, size: 18),
                         ),
                         ButtonSegment(
                           value: SkScoringMode.rascal,
-                          label: Text('Rascal'),
-                          icon: Icon(Icons.bolt_outlined, size: 18),
+                          label: Text(l.scoringRascal),
+                          icon: const Icon(Icons.bolt_outlined, size: 18),
                         ),
                       ],
                       selected: {_scoringMode},
@@ -110,7 +110,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Nombre de joueurs',
+                      l.numberOfPlayers,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     NumberStepper(
@@ -124,10 +124,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Noms des joueurs',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(l.playerNames, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...List.generate(_playerCount, (i) {
               return Padding(
@@ -135,7 +132,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
                 child: TextFormField(
                   controller: _controllers[i],
                   decoration: InputDecoration(
-                    labelText: 'Joueur ${i + 1}',
+                    labelText: l.playerLabel(i + 1),
                     prefixIcon: const Icon(Icons.person_outline),
                   ),
                   textCapitalization: TextCapitalization.words,
@@ -145,7 +142,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
             const SizedBox(height: 24),
             FilledButton.icon(
               icon: const Icon(Icons.play_arrow),
-              label: const Text('Commencer la partie'),
+              label: Text(l.startGame),
               onPressed: _startGame,
             ),
           ],
@@ -161,20 +158,11 @@ class _ScoringHintCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final hints = mode == SkScoringMode.skullKing
-        ? const [
-            'Annonce 0 réussie : +10 × numéro de manche',
-            'Annonce 0 ratée : −10 × numéro de manche',
-            'Annonce > 0 réussie : +20 × annonce + bonus',
-            'Annonce > 0 ratée : −10 × |écart|',
-          ]
-        : const [
-            'Chevrotine (×10) ou Boulet de Canon (×15) choisi à l\'enchère',
-            'Coup direct (diff = 0) : score plein + bonus',
-            'Frappe à revers Chevrotine (diff = 1) : moitié du score + moitié du bonus',
-            'Échec cuisant : 0 point',
-          ];
+        ? [l.skHintClassic1, l.skHintClassic2, l.skHintClassic3, l.skHintClassic4]
+        : [l.skHintRascal1, l.skHintRascal2, l.skHintRascal3, l.skHintRascal4];
 
     return Container(
       padding: const EdgeInsets.all(10),

@@ -5,11 +5,7 @@ class WinnerBanner extends StatelessWidget {
   final String winner;
   final String label;
 
-  const WinnerBanner({
-    super.key,
-    required this.winner,
-    this.label = 'Vainqueur',
-  });
+  const WinnerBanner({super.key, required this.winner, required this.label});
 
   @override
   Widget build(BuildContext context) {

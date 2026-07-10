@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../widgets/number_stepper.dart';
@@ -52,6 +53,7 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(skullKingProvider);
     if (state.phase == SkPhase.setup) return const RedirectHome();
     _init(state);
@@ -60,7 +62,7 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Skull King — Manche ${state.currentRound}/10'),
+          title: Text(l.skRoundTitle(state.currentRound)),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
@@ -92,7 +94,7 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Résultats — plis réalisés + bonus',
+                            l.resultsHeader,
                             style: TextStyle(
                               color: Theme.of(
                                 context,
@@ -117,7 +119,7 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '$_totalTricks / ${state.currentRound} plis',
+                            l.tricksBadge(_totalTricks, state.currentRound),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -182,8 +184,13 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                                   ),
                                   child: Text(
                                     isRascal
-                                        ? 'Annonce : $bid — ${boulet ? 'Boulet ×15' : 'Chevrotine ×10'}'
-                                        : 'Annonce : $bid',
+                                        ? l.bidLabelRascal(
+                                            bid,
+                                            boulet
+                                                ? l.bouletShort
+                                                : l.chevrotineShort,
+                                          )
+                                        : l.bidLabel(bid),
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
@@ -193,7 +200,7 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                const Text('Plis réalisés :'),
+                                Text(l.tricksWonLabel),
                                 const SizedBox(width: 12),
                                 NumberStepper(
                                   value: tricks,
@@ -213,8 +220,8 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
-                                    decoration: const InputDecoration(
-                                      labelText: 'Bonus',
+                                    decoration: InputDecoration(
+                                      labelText: l.bonus,
                                       isDense: true,
                                     ),
                                     onChanged: (_) => setState(() {}),
@@ -226,7 +233,9 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                'Estimé : ${preview >= 0 ? '+' : ''}$preview pts',
+                                l.estimatedPts(
+                                  '${preview >= 0 ? '+' : ''}$preview',
+                                ),
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       fontWeight: FontWeight.w600,
@@ -249,7 +258,7 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                 padding: const EdgeInsets.all(16),
                 child: FilledButton.icon(
                   icon: const Icon(Icons.check),
-                  label: const Text('Valider la manche'),
+                  label: Text(l.validateRound),
                   onPressed: () => _submit(state),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),

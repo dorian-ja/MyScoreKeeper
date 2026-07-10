@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/dame_de_pique_state.dart';
 import '../../providers/dame_de_pique_provider.dart';
 import '../../widgets/number_stepper.dart';
@@ -54,6 +55,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(dameDepiqueProvider);
     if (state.phase == DdpPhase.setup) return const RedirectHome();
     _init(state);
@@ -66,7 +68,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Dame de Pique — Manche $roundNumber'),
+          title: Text(l.ddpRoundTitle(roundNumber)),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
@@ -83,7 +85,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     Text(
-                      '🃏 $dealer distribue',
+                      l.dealerDistributes(dealer),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 8),
@@ -96,12 +98,12 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Ramassage général ?',
+                              l.moonShotQuestion,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Un joueur a pris tous les cœurs + la dame de pique (+26 aux autres).',
+                              l.moonShotDesc,
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             const SizedBox(height: 12),
@@ -109,7 +111,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                               spacing: 8,
                               children: [
                                 ChoiceChip(
-                                  label: const Text('Personne'),
+                                  label: Text(l.nobody),
                                   selected: _moonShooter == null,
                                   onSelected: (_) =>
                                       setState(() => _moonShooter = null),
@@ -135,7 +137,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                       Row(
                         children: [
                           Text(
-                            'Cartes ramassées',
+                            l.cardsCollected,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const Spacer(),
@@ -144,7 +146,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '♥ = 1 pt chacun • ♠Q = 13 pts',
+                        l.heartsQueenLegend,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 8),
@@ -176,7 +178,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                                             ).textTheme.titleSmall,
                                           ),
                                           Text(
-                                            'Total : $currentTotal pts',
+                                            l.totalPts(currentTotal),
                                             style: Theme.of(
                                               context,
                                             ).textTheme.bodySmall,
@@ -248,7 +250,7 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '$_moonShooter : 0 pt\nAutres joueurs : +26 pts chacun',
+                                l.moonShotResult(_moonShooter!),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Theme.of(
@@ -271,10 +273,10 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
                   icon: const Icon(Icons.check),
                   label: Text(
                     _isValid
-                        ? 'Valider la manche'
+                        ? l.validateRound
                         : _moonShooter == null && _heartsLeft > 0
-                        ? 'Valider ($_heartsLeft ♥ à répartir)'
-                        : 'Valider (♠Q à attribuer)',
+                        ? l.validateHeartsLeft(_heartsLeft)
+                        : l.validateQueen,
                   ),
                   onPressed: _isValid ? () => _submit(state) : null,
                   style: FilledButton.styleFrom(
@@ -296,6 +298,7 @@ class _RemainingBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final done = heartsLeft == 0;
     final scheme = Theme.of(context).colorScheme;
     return Container(
@@ -305,7 +308,7 @@ class _RemainingBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        done ? '♥ 13/13' : '♥ ${13 - heartsLeft}/13',
+        l.heartsBadge(13 - heartsLeft),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,

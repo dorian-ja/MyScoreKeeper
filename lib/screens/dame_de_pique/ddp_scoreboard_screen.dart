@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/dame_de_pique_state.dart';
 import '../../providers/dame_de_pique_provider.dart';
 import '../../widgets/quit_game_button.dart';
@@ -14,6 +15,7 @@ class DdpScoreboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(dameDepiqueProvider);
     if (state.phase == DdpPhase.setup) return const RedirectHome();
 
@@ -25,7 +27,7 @@ class DdpScoreboardScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isFinished ? 'Dame de Pique — Fin' : 'Dame de Pique — Scores',
+            isFinished ? l.ddpFinishedTitle : l.ddpScoresTitle,
           ),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
@@ -43,10 +45,7 @@ class DdpScoreboardScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (isFinished) ...[
-                      WinnerBanner(
-                        winner: ranked.first,
-                        label: 'Vainqueur (moins de points)',
-                      ),
+                      WinnerBanner(winner: ranked.first, label: l.winnerLowest),
                       const SizedBox(height: 16),
                     ],
                     _ScoreTable(state: state),
@@ -80,7 +79,7 @@ class DdpScoreboardScreen extends ConsumerWidget {
                     ref.read(dameDepiqueProvider.notifier).reset();
                     context.go('/');
                   },
-                  shareTextBuilder: () => buildShareText('Dame de Pique', [
+                  shareTextBuilder: () => buildShareText(l, l.gameDameDePique, [
                     for (final p in ranked)
                       (name: p, score: state.totalScore(p)),
                   ]),
@@ -100,6 +99,7 @@ class _ScoreTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final ranked = state.rankedPlayers;
     final threshold = state.threshold;
     final hasScores = state.completedRounds.isNotEmpty;
@@ -111,10 +111,10 @@ class _ScoreTable extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('Scores', style: Theme.of(context).textTheme.titleMedium),
+                Text(l.scores, style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 Text(
-                  'Seuil : $threshold pts',
+                  l.thresholdLabel(threshold),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -139,7 +139,7 @@ class _ScoreTable extends StatelessWidget {
                     ),
                     Expanded(child: Text(isLeader ? '$player 👑' : player)),
                     Text(
-                      '$total pts',
+                      l.points(total),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: reachedThreshold

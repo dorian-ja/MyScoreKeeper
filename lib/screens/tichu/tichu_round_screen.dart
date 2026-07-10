@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/tichu_state.dart';
 import '../../providers/tichu_provider.dart';
 import '../../theme.dart';
@@ -53,6 +54,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(tichuProvider);
     if (state.phase == TichuPhase.setup) return const RedirectHome();
     _init(state);
@@ -66,7 +68,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Tichu — Manche ${state.currentRound}'),
+          title: Text(l.tichuRoundTitle(state.currentRound)),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
@@ -88,8 +90,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _InfoChip(
                           icon: Icons.info_outline,
-                          text:
-                              'Tientsin : Grand Tichu avant la 7ème carte • Don de 2 cartes',
+                          text: l.tientsinInfo,
                         ),
                       ),
 
@@ -105,15 +106,15 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                                 Expanded(
                                   child: Text(
                                     isTientsin
-                                        ? 'Empire ?'
-                                        : 'Double victoire ?',
+                                        ? l.empireQuestion
+                                        : l.doubleVictoryQuestion,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.titleMedium,
                                   ),
                                 ),
                                 Text(
-                                  '+$sweepPoints pts',
+                                  l.sweepPts(sweepPoints),
                                   style: TextStyle(
                                     color: Theme.of(
                                       context,
@@ -126,7 +127,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                             if (isTientsin) ...[
                               const SizedBox(height: 4),
                               Text(
-                                'Les 3 joueurs de la même équipe terminent 1er, 2ème et 3ème',
+                                l.tientsinEmpireDesc,
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: Theme.of(
@@ -138,9 +139,9 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                             const SizedBox(height: 12),
                             SegmentedButton<TichuSweep>(
                               segments: [
-                                const ButtonSegment(
+                                ButtonSegment(
                                   value: TichuSweep.none,
-                                  label: Text('Aucun'),
+                                  label: Text(l.sweepNone),
                                 ),
                                 ButtonSegment(
                                   value: TichuSweep.teamA,
@@ -176,7 +177,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Points cartes',
+                                l.cardPoints,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 12),
@@ -193,8 +194,8 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                                         SignedIntTextInputFormatter(),
                                       ],
                                       decoration: InputDecoration(
-                                        labelText: '$teamALabel (pts)',
-                                        helperText: 'De -25 à 125',
+                                        labelText: l.teamPointsLabel(teamALabel),
+                                        helperText: l.cardPointsRange,
                                       ),
                                       onChanged: (_) => setState(() {}),
                                     ),
@@ -203,7 +204,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                                   Expanded(
                                     child: InputDecorator(
                                       decoration: InputDecoration(
-                                        labelText: '$teamBLabel (pts)',
+                                        labelText: l.teamPointsLabel(teamBLabel),
                                       ),
                                       child: Text(
                                         '${100 - (int.tryParse(_teamAPointsCtrl.text) ?? 50).clamp(-25, 125)}',
@@ -224,7 +225,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                     // Annonces par équipe
                     const SizedBox(height: 12),
                     Text(
-                      'Annonces',
+                      l.announcements,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -262,7 +263,7 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
                 padding: const EdgeInsets.all(16),
                 child: FilledButton.icon(
                   icon: const Icon(Icons.check),
-                  label: const Text('Valider la manche'),
+                  label: Text(l.validateRound),
                   onPressed: () => _submit(state),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),
@@ -331,6 +332,7 @@ class _TeamAnnouncementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -359,18 +361,18 @@ class _TeamAnnouncementSection extends StatelessWidget {
                   Text(player, style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 8),
                   SegmentedButton<TichuAnnouncement>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: TichuAnnouncement.none,
-                        label: Text('Rien'),
+                        label: Text(l.announceNone),
                       ),
                       ButtonSegment(
                         value: TichuAnnouncement.tichu,
-                        label: Text('Tichu\n+100/-100'),
+                        label: Text(l.announceTichu),
                       ),
                       ButtonSegment(
                         value: TichuAnnouncement.grandTichu,
-                        label: Text('Grand T.\n+200/-200'),
+                        label: Text(l.announceGrandTichu),
                       ),
                     ],
                     selected: {ann},
@@ -386,7 +388,7 @@ class _TeamAnnouncementSection extends StatelessWidget {
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                        isSuccess ? '✓ Réussi' : '✗ Échoué',
+                        isSuccess ? l.announceSucceeded : l.announceFailed,
                         style: TextStyle(
                           color: isSuccess
                               ? Theme.of(context).colorScheme.primary

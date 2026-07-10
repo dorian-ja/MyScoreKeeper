@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import '../l10n/app_localizations.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
+import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -18,36 +20,33 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   GameType? _filter; // null = tous les jeux
 
   Future<void> _export() async {
+    final l = AppLocalizations.of(context);
     final json = ref.read(historyProvider.notifier).exportJson();
     try {
       await SharePlus.instance.share(
-        ShareParams(text: json, subject: 'My Score Keeper — historique'),
+        ShareParams(text: json, subject: l.exportSubject),
       );
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: json));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Historique copié dans le presse-papiers'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.historyCopied)));
       }
     }
   }
 
   Future<void> _import() async {
+    final l = AppLocalizations.of(context);
     final controller = TextEditingController();
     final raw = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Importer un historique'),
+        title: Text(l.importTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Collez ci-dessous le contenu d\'un export. Les parties déjà '
-              'présentes ne seront pas dupliquées.',
-            ),
+            Text(l.importBody),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
@@ -56,7 +55,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 hintText: '[ … ]',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.paste),
-                  tooltip: 'Coller',
+                  tooltip: l.pasteTooltip,
                   onPressed: () async {
                     final data = await Clipboard.getData(Clipboard.kTextPlain);
                     if (data?.text != null) controller.text = data!.text!;
@@ -69,11 +68,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(l.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Importer'),
+            child: Text(l.importAction),
           ),
         ],
       ),
@@ -85,17 +84,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     try {
       final entries = HistoryNotifier.parseExport(raw);
       if (entries.isEmpty) {
-        message = 'Aucune partie valide trouvée dans le texte fourni.';
+        message = l.importNoValid;
       } else {
         final added = await ref
             .read(historyProvider.notifier)
             .importEntries(entries);
-        message = added == 0
-            ? 'Toutes ces parties étaient déjà présentes.'
-            : '$added partie${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}.';
+        message = added == 0 ? l.importAllPresent : l.importedCount(added);
       }
     } catch (_) {
-      message = 'Format invalide : impossible de lire ce texte.';
+      message = l.importInvalid;
     }
     if (mounted) {
       ScaffoldMessenger.of(
@@ -105,22 +102,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Future<void> _confirmClearAll() async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Tout effacer ?'),
-        content: const Text(
-          'Toutes les parties sauvegardées seront supprimées définitivement. '
-          'Pensez à exporter d\'abord si vous voulez les conserver.',
-        ),
+        title: Text(l.clearAllTitle),
+        content: Text(l.clearAllBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(l.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Tout effacer'),
+            child: Text(l.clearAllAction),
           ),
         ],
       ),
@@ -132,6 +127,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final history = ref.watch(historyProvider);
     final filtered = _filter == null
         ? history
@@ -139,15 +135,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historique'),
+        title: Text(l.history),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
-            tooltip: 'Statistiques',
+            tooltip: l.statistics,
             onPressed: () => context.push('/stats'),
           ),
           PopupMenuButton<String>(
-            tooltip: 'Plus d\'options',
+            tooltip: l.moreOptions,
             onSelected: (value) {
               switch (value) {
                 case 'export':
@@ -162,17 +158,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               PopupMenuItem(
                 value: 'export',
                 enabled: history.isNotEmpty,
-                child: const ListTile(
-                  leading: Icon(Icons.ios_share),
-                  title: Text('Exporter'),
+                child: ListTile(
+                  leading: const Icon(Icons.ios_share),
+                  title: Text(l.exportAction),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'import',
                 child: ListTile(
-                  leading: Icon(Icons.file_download_outlined),
-                  title: Text('Importer'),
+                  leading: const Icon(Icons.file_download_outlined),
+                  title: Text(l.importAction),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -184,7 +180,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     Icons.delete_sweep_outlined,
                     color: Theme.of(context).colorScheme.error,
                   ),
-                  title: const Text('Tout effacer'),
+                  title: Text(l.clearAllAction),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -204,7 +200,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
                     child: ChoiceChip(
-                      label: const Text('Tous'),
+                      label: Text(l.filterAll),
                       selected: _filter == null,
                       onSelected: (_) => setState(() => _filter = null),
                     ),
@@ -217,7 +213,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         bottom: 8,
                       ),
                       child: ChoiceChip(
-                        label: Text(t.displayName),
+                        label: Text(t.label(l)),
                         selected: _filter == t,
                         onSelected: (_) => setState(() => _filter = t),
                       ),
@@ -240,8 +236,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         const SizedBox(height: 12),
                         Text(
                           _filter == null
-                              ? 'Aucune partie sauvegardée'
-                              : 'Aucune partie de ${_filter!.displayName}',
+                              ? l.noSavedGames
+                              : l.noGamesOfType(_filter!.label(l)),
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ],
@@ -288,6 +284,7 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -310,17 +307,17 @@ class _HistoryTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
-                semanticLabel: entry.gameType.displayName,
+                semanticLabel: entry.gameType.label(l),
               ),
             ),
             title: Text(
-              entry.gameType.displayName,
+              entry.gameType.label(l),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('🏆 ${entry.winner}'),
+                Text(l.winnerLine(entry.winner)),
                 Text(
                   _formatDate(entry.playedAt),
                   style: Theme.of(context).textTheme.bodySmall,
@@ -339,22 +336,23 @@ class _HistoryTile extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) {
+    final l = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer ?'),
-        content: const Text('Cette partie sera supprimée définitivement.'),
+        title: Text(l.deleteQuestion),
+        content: Text(l.deleteGameBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(l.actionCancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               onDelete();
             },
-            child: const Text('Supprimer'),
+            child: Text(l.actionDelete),
           ),
         ],
       ),

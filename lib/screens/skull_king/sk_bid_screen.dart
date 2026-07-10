@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../widgets/number_stepper.dart';
@@ -35,6 +36,7 @@ class _SkBidScreenState extends ConsumerState<SkBidScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(skullKingProvider);
     if (state.phase == SkPhase.setup) return const RedirectHome();
     _init(state);
@@ -46,7 +48,7 @@ class _SkBidScreenState extends ConsumerState<SkBidScreen> {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Skull King — Manche ${state.currentRound}/10'),
+          title: Text(l.skRoundTitle(state.currentRound)),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
@@ -80,7 +82,7 @@ class _SkBidScreenState extends ConsumerState<SkBidScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '${state.currentRound} carte(s) par joueur — Enchères',
+                              l.skCardsBids(state.currentRound),
                               style: TextStyle(
                                 color: Theme.of(
                                   context,
@@ -92,7 +94,7 @@ class _SkBidScreenState extends ConsumerState<SkBidScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '🃏 $dealer distribue',
+                          l.dealerDistributes(dealer),
                           style: TextStyle(
                             color: Theme.of(context)
                                 .colorScheme
@@ -144,14 +146,14 @@ class _SkBidScreenState extends ConsumerState<SkBidScreen> {
                             if (isRascal) ...[
                               const SizedBox(height: 10),
                               SegmentedButton<bool>(
-                                segments: const [
+                                segments: [
                                   ButtonSegment(
                                     value: false,
-                                    label: Text('Chevrotine ×10'),
+                                    label: Text(l.chevrotineFull),
                                   ),
                                   ButtonSegment(
                                     value: true,
-                                    label: Text('Boulet de Canon ×15'),
+                                    label: Text(l.bouletFull),
                                   ),
                                 ],
                                 selected: {_isBoulet[player] ?? false},
@@ -173,7 +175,7 @@ class _SkBidScreenState extends ConsumerState<SkBidScreen> {
                 padding: const EdgeInsets.all(16),
                 child: FilledButton.icon(
                   icon: const Icon(Icons.arrow_forward),
-                  label: const Text('Valider les enchères'),
+                  label: Text(l.validateBids),
                   onPressed: _submit,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),

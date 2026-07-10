@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/generic_state.dart';
 import '../../providers/generic_provider.dart';
 import '../../widgets/quit_game_button.dart';
@@ -47,21 +48,22 @@ class _GenericRoundScreenState extends ConsumerState<GenericRoundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(genericGameProvider);
     if (state.phase == GenericPhase.setup) return const RedirectHome();
     _init(state);
 
     final roundNumber = state.completedRounds.length + 1;
     final limitParts = <String>[
-      if (state.maxScore != null) '${state.maxScore} pts max',
-      if (state.maxRounds != null) '${state.maxRounds} manches max',
+      if (state.maxScore != null) l.ptsMaxLimit(state.maxScore!),
+      if (state.maxRounds != null) l.roundsMaxLimit(state.maxRounds!),
     ];
 
     return PopScope(
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Autre — Manche $roundNumber'),
+          title: Text(l.genericRoundTitle(roundNumber)),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
@@ -85,7 +87,7 @@ class _GenericRoundScreenState extends ConsumerState<GenericRoundScreen> {
                       const SizedBox(height: 8),
                     ],
                     Text(
-                      'Scores de la manche',
+                      l.roundScores,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -110,7 +112,7 @@ class _GenericRoundScreenState extends ConsumerState<GenericRoundScreen> {
                                       ).textTheme.titleSmall,
                                     ),
                                     Text(
-                                      'Total : $currentTotal pts',
+                                      l.totalPts(currentTotal),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodySmall,
@@ -130,8 +132,8 @@ class _GenericRoundScreenState extends ConsumerState<GenericRoundScreen> {
                                     SignedIntTextInputFormatter(),
                                   ],
                                   textAlign: TextAlign.center,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Pts',
+                                  decoration: InputDecoration(
+                                    labelText: l.ptsField,
                                     isDense: true,
                                   ),
                                 ),
@@ -148,7 +150,7 @@ class _GenericRoundScreenState extends ConsumerState<GenericRoundScreen> {
                 padding: const EdgeInsets.all(16),
                 child: FilledButton.icon(
                   icon: const Icon(Icons.check),
-                  label: const Text('Valider la manche'),
+                  label: Text(l.validateRound),
                   onPressed: () => _submit(state),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),

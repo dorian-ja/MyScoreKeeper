@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 /// Tableau « manche par manche » (une colonne par joueur), utilisé par
 /// la Dame de Pique et le mode Autre.
@@ -14,13 +15,14 @@ class RoundHistoryTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Historique', style: Theme.of(context).textTheme.titleMedium),
+            Text(l.history, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -30,7 +32,7 @@ class RoundHistoryTable extends StatelessWidget {
                 dataRowMinHeight: 28,
                 dataRowMaxHeight: 36,
                 columns: [
-                  const DataColumn(label: Text('Manche')),
+                  DataColumn(label: Text(l.colRound)),
                   ...players.map((p) => DataColumn(label: Text(p))),
                 ],
                 rows: rounds.asMap().entries.map((e) {
@@ -38,7 +40,7 @@ class RoundHistoryTable extends StatelessWidget {
                   final r = e.value;
                   return DataRow(
                     cells: [
-                      DataCell(Text('M. ${i + 1}')),
+                      DataCell(Text(l.roundShort(i + 1))),
                       ...players.map((p) => DataCell(Text('${r[p] ?? 0}'))),
                     ],
                   );

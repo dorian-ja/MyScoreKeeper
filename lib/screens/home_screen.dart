@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../l10n/app_localizations.dart';
 import '../models/dame_de_pique_state.dart';
 import '../models/game_type.dart';
+import '../models/game_type_l10n.dart';
 import '../models/generic_state.dart';
 import '../models/skull_king_state.dart';
 import '../models/tichu_state.dart';
@@ -14,7 +16,7 @@ import '../providers/tichu_provider.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  List<_ResumeInfo> _inProgressGames(WidgetRef ref) {
+  List<_ResumeInfo> _inProgressGames(WidgetRef ref, AppLocalizations l) {
     final result = <_ResumeInfo>[];
 
     final sk = ref.watch(skullKingProvider);
@@ -23,8 +25,8 @@ class HomeScreen extends ConsumerWidget {
         _ResumeInfo(
           type: GameType.skullKing,
           detail: sk.phase == SkPhase.finished
-              ? 'Partie terminée — non sauvegardée'
-              : 'Manche ${sk.currentRound}/10 • ${sk.players.length} joueurs',
+              ? l.gameFinishedUnsaved
+              : l.skResumeDetail(sk.currentRound, sk.players.length),
           route: switch (sk.phase) {
             SkPhase.bidding => '/skull-king/bid',
             SkPhase.scoring => '/skull-king/result',
@@ -41,9 +43,12 @@ class HomeScreen extends ConsumerWidget {
         _ResumeInfo(
           type: GameType.tichu,
           detail: tichu.phase == TichuPhase.finished
-              ? 'Partie terminée — non sauvegardée'
-              : 'Manche ${tichu.currentRound} • '
-                    '${tichu.teamATotal} / ${tichu.teamBTotal} pts',
+              ? l.gameFinishedUnsaved
+              : l.tichuResumeDetail(
+                  tichu.currentRound,
+                  tichu.teamATotal,
+                  tichu.teamBTotal,
+                ),
           route: tichu.phase == TichuPhase.round
               ? '/tichu/round'
               : '/tichu/scoreboard',
@@ -58,9 +63,11 @@ class HomeScreen extends ConsumerWidget {
         _ResumeInfo(
           type: GameType.dameDepique,
           detail: ddp.phase == DdpPhase.finished
-              ? 'Partie terminée — non sauvegardée'
-              : 'Manche ${ddp.completedRounds.length + 1} • '
-                    'seuil ${ddp.threshold} pts',
+              ? l.gameFinishedUnsaved
+              : l.ddpResumeDetail(
+                  ddp.completedRounds.length + 1,
+                  ddp.threshold,
+                ),
           route: ddp.phase == DdpPhase.round
               ? '/dame-de-pique/round'
               : '/dame-de-pique/scoreboard',
@@ -75,9 +82,11 @@ class HomeScreen extends ConsumerWidget {
         _ResumeInfo(
           type: GameType.autre,
           detail: generic.phase == GenericPhase.finished
-              ? 'Partie terminée — non sauvegardée'
-              : 'Manche ${generic.completedRounds.length + 1} • '
-                    '${generic.players.length} joueurs',
+              ? l.gameFinishedUnsaved
+              : l.genericResumeDetail(
+                  generic.completedRounds.length + 1,
+                  generic.players.length,
+                ),
           route: generic.phase == GenericPhase.round
               ? '/autre/round'
               : '/autre/scoreboard',
@@ -91,17 +100,18 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final inProgress = _inProgressGames(ref);
+    final inProgress = _inProgressGames(ref, l);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Score Keeper'),
+        title: Text(l.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
-            tooltip: 'Réglages',
+            tooltip: l.settings,
           ),
         ],
       ),
@@ -116,7 +126,7 @@ class HomeScreen extends ConsumerWidget {
                   children: [
                     if (inProgress.isNotEmpty) ...[
                       Text(
-                        'Partie en cours',
+                        l.currentGame,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(color: scheme.onSurface),
                       ),
@@ -130,7 +140,7 @@ class HomeScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                     ],
                     Text(
-                      'Choisir un jeu',
+                      l.chooseGame,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(color: scheme.onSurface),
                     ),
@@ -148,7 +158,7 @@ class HomeScreen extends ConsumerWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.history),
-                            label: const Text('Historique'),
+                            label: Text(l.history),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -162,7 +172,7 @@ class HomeScreen extends ConsumerWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.bar_chart),
-                            label: const Text('Statistiques'),
+                            label: Text(l.statistics),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -205,19 +215,20 @@ class _ResumeCard extends StatelessWidget {
   const _ResumeCard({required this.info});
 
   Future<void> _confirmDiscard(BuildContext context) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Abandonner la partie ?'),
-        content: const Text('La partie en cours sera définitivement perdue.'),
+        title: Text(l.discardGameTitle),
+        content: Text(l.discardGameBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Non'),
+            child: Text(l.actionNo),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Abandonner'),
+            child: Text(l.discard),
           ),
         ],
       ),
@@ -227,6 +238,7 @@ class _ResumeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Card(
       color: scheme.primaryContainer,
@@ -244,7 +256,7 @@ class _ResumeCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   fit: BoxFit.cover,
-                  semanticLabel: info.type.displayName,
+                  semanticLabel: info.type.label(l),
                 ),
               ),
               const SizedBox(width: 12),
@@ -253,7 +265,7 @@ class _ResumeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      info.type.displayName,
+                      info.type.label(l),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: scheme.onPrimaryContainer,
@@ -274,12 +286,12 @@ class _ResumeCard extends StatelessWidget {
                   Icons.delete_outline,
                   color: scheme.onPrimaryContainer,
                 ),
-                tooltip: 'Abandonner',
+                tooltip: l.discard,
                 onPressed: () => _confirmDiscard(context),
               ),
               FilledButton(
                 onPressed: () => context.go(info.route),
-                child: const Text('Reprendre'),
+                child: Text(l.resume),
               ),
             ],
           ),
@@ -309,6 +321,7 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -327,7 +340,7 @@ class _GameCard extends StatelessWidget {
                   width: 56,
                   height: 56,
                   fit: BoxFit.cover,
-                  semanticLabel: game.displayName,
+                  semanticLabel: game.label(l),
                 ),
               ),
               const SizedBox(width: 16),
@@ -336,14 +349,14 @@ class _GameCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      game.displayName,
+                      game.label(l),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      game.subtitle,
+                      game.subtitleText(l),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

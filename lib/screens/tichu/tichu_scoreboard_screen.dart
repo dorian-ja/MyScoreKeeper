@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/tichu_state.dart';
 import '../../providers/tichu_provider.dart';
 import '../../theme.dart';
@@ -14,6 +15,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(tichuProvider);
     if (state.phase == TichuPhase.setup) return const RedirectHome();
 
@@ -26,7 +28,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isFinished ? 'Tichu — Partie terminée' : 'Tichu — Scores',
+            isFinished ? l.tichuFinishedTitle : l.tichuScoresTitle,
           ),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
@@ -44,7 +46,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (isFinished) ...[
-                      WinnerBanner(winner: winner),
+                      WinnerBanner(winner: winner, label: l.winner),
                       const SizedBox(height: 16),
                     ],
                     _TeamScoreCard(state: state),
@@ -77,7 +79,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
                       (name: state.teamALabel, score: state.teamATotal),
                       (name: state.teamBLabel, score: state.teamBTotal),
                     ]..sort((a, b) => b.score.compareTo(a.score));
-                    return buildShareText('Tichu', teams);
+                    return buildShareText(l, l.gameTichu, teams);
                   },
                 ),
               ),
@@ -171,7 +173,10 @@ class _TeamScore extends StatelessWidget {
             color: color,
           ),
         ),
-        Text('/ $target pts', style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          AppLocalizations.of(context).targetPts(target),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       ],
     );
   }
@@ -183,6 +188,7 @@ class _RoundHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (state.completedRounds.isEmpty) return const SizedBox();
     return Card(
       child: Padding(
@@ -191,7 +197,7 @@ class _RoundHistoryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Historique des manches',
+              l.roundsHistory,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -207,15 +213,19 @@ class _RoundHistoryCard extends StatelessWidget {
                     SizedBox(
                       width: 60,
                       child: Text(
-                        'M. ${i + 1}',
+                        l.roundShort(i + 1),
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
                     Expanded(
                       child: Text(
                         r.sweep == TichuSweep.none
-                            ? '${r.teamACardPoints} pts cartes'
-                            : 'Double victoire ${r.sweep == TichuSweep.teamA ? state.teamALabel : state.teamBLabel}',
+                            ? l.cardPointsShort(r.teamACardPoints)
+                            : l.doubleVictoryTeam(
+                                r.sweep == TichuSweep.teamA
+                                    ? state.teamALabel
+                                    : state.teamBLabel,
+                              ),
                         style: Theme.of(context).textTheme.bodySmall,
                         overflow: TextOverflow.ellipsis,
                       ),

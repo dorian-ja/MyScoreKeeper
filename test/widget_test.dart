@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_score_keeper/l10n/app_localizations.dart';
 import 'package:my_score_keeper/utils/player_names.dart';
 import 'package:my_score_keeper/widgets/number_stepper.dart';
 
@@ -46,6 +47,9 @@ void main() {
     bool? lastResult;
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('fr'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Builder(
             builder: (context) {

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import '../l10n/app_localizations.dart';
 
 /// Construit le texte de partage d'une fin de partie.
 String buildShareText(
+  AppLocalizations l,
   String gameName,
   List<({String name, int score})> ranking,
 ) {
   final buffer = StringBuffer();
   if (ranking.isNotEmpty) {
-    buffer.writeln(
-      '🏆 ${ranking.first.name} remporte la partie de $gameName !',
-    );
+    buffer.writeln(l.shareWinLine(ranking.first.name, gameName));
   }
   for (var i = 0; i < ranking.length; i++) {
-    buffer.writeln('${i + 1}. ${ranking[i].name} — ${ranking[i].score} pts');
+    buffer.writeln(l.shareRankLine(i + 1, ranking[i].name, ranking[i].score));
   }
-  buffer.write('— My Score Keeper');
+  buffer.write(l.shareFooter);
   return buffer.toString();
 }
 
@@ -65,42 +65,41 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
       _saving = false;
       _saved = true;
     });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Partie sauvegardée !')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).gameSavedSnack)),
+    );
   }
 
   Future<void> _share() async {
+    final l = AppLocalizations.of(context);
     final text = widget.shareTextBuilder();
     try {
       await SharePlus.instance.share(ShareParams(text: text));
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: text));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Résumé copié dans le presse-papiers')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.summaryCopied)));
       }
     }
   }
 
   Future<void> _confirmUndo() async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Annuler la dernière manche ?'),
-        content: const Text(
-          'Ses scores seront supprimés et la manche devra '
-          'être resaisie.',
-        ),
+        title: Text(l.undoRoundTitle),
+        content: Text(l.undoRoundBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Non'),
+            child: Text(l.actionNo),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Annuler la manche'),
+            child: Text(l.undoRound),
           ),
         ],
       ),
@@ -115,12 +114,13 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (!widget.isFinished) {
       return Column(
         children: [
           FilledButton.icon(
             icon: const Icon(Icons.arrow_forward),
-            label: const Text('Manche suivante'),
+            label: Text(l.nextRound),
             onPressed: widget.onNextRound,
             style: _fullWidth,
           ),
@@ -131,7 +131,7 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.undo),
-                    label: const Text('Annuler la manche'),
+                    label: Text(l.undoRound),
                     onPressed: _confirmUndo,
                     style: _fullWidthOutlined,
                   ),
@@ -142,7 +142,7 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.flag_outlined),
-                    label: const Text('Terminer'),
+                    label: Text(l.finish),
                     onPressed: widget.onEndGame,
                     style: _fullWidthOutlined,
                   ),
@@ -157,7 +157,7 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
       children: [
         FilledButton.icon(
           icon: Icon(_saved ? Icons.check : Icons.save_outlined),
-          label: Text(_saved ? 'Partie sauvegardée' : 'Sauvegarder la partie'),
+          label: Text(_saved ? l.gameSavedButton : l.saveGame),
           onPressed: _saved || _saving ? null : _save,
           style: _fullWidth,
         ),
@@ -167,7 +167,7 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
             Expanded(
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.share_outlined),
-                label: const Text('Partager'),
+                label: Text(l.share),
                 onPressed: _share,
                 style: _fullWidthOutlined,
               ),
@@ -177,7 +177,7 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.undo),
-                  label: const Text('Corriger'),
+                  label: Text(l.correct),
                   onPressed: _confirmUndo,
                   style: _fullWidthOutlined,
                 ),
@@ -188,7 +188,7 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
         const SizedBox(height: 8),
         OutlinedButton.icon(
           icon: const Icon(Icons.home_outlined),
-          label: const Text('Retour à l\'accueil'),
+          label: Text(l.backHome),
           onPressed: widget.onHome,
           style: _fullWidthOutlined,
         ),

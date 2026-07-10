@@ -6,31 +6,8 @@ enum GameType {
   dameDepique,
   autre;
 
-  String get displayName {
-    switch (this) {
-      case GameType.skullKing:
-        return 'Skull King';
-      case GameType.tichu:
-        return 'Tichu';
-      case GameType.dameDepique:
-        return 'Dame de Pique';
-      case GameType.autre:
-        return 'Autre';
-    }
-  }
-
-  String get subtitle {
-    switch (this) {
-      case GameType.skullKing:
-        return '2–8 joueurs • 10 manches';
-      case GameType.tichu:
-        return '4 joueurs • 2 équipes';
-      case GameType.dameDepique:
-        return '4 joueurs • cartes';
-      case GameType.autre:
-        return 'Comptage de points personnalisé';
-    }
-  }
+  // Les libellés et sous-titres localisés vivent dans `game_type_l10n.dart`
+  // (extension `GameTypeL10n`), qui dépend d'`AppLocalizations`.
 
   Color get color {
     switch (this) {
@@ -42,19 +19,6 @@ enum GameType {
         return const Color(0xFF2B2118); // encre/noir de la dame de pique
       case GameType.autre:
         return const Color(0xFF305868); // bleu-gris de l'icône
-    }
-  }
-
-  String get emoji {
-    switch (this) {
-      case GameType.skullKing:
-        return '🏴‍☠️';
-      case GameType.tichu:
-        return '🎴';
-      case GameType.dameDepique:
-        return '♠️';
-      case GameType.autre:
-        return '➕';
     }
   }
 
