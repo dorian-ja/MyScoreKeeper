@@ -167,6 +167,12 @@
   "paletSetupTitle": "Palet — Configuration",
   "paletModeBreton": "Breton",
   "paletModeVendeen": "Vendéen",
+  "paletHintBreton1": "Planche en bois, palets en fonte",
+  "paletHintBreton2": "Distance de lancer : 5 m",
+  "paletHintBreton3": "Jeu de force — partie en 12 points",
+  "paletHintVendeen1": "Plaque en plomb, palets en laiton",
+  "paletHintVendeen2": "Distance de lancer : 2,80 m",
+  "paletHintVendeen3": "Jeu de précision — partie en 11/13 points",
   "paletTeamSize": "Joueurs par équipe",
 
   "skRoundTitle": "Skull King — Manche {round}/10",

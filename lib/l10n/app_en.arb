@@ -150,6 +150,12 @@
   "paletSetupTitle": "Palet — Setup",
   "paletModeBreton": "Breton",
   "paletModeVendeen": "Vendéen",
+  "paletHintBreton1": "Wooden board, cast-iron pucks",
+  "paletHintBreton2": "Throwing distance: 5 m",
+  "paletHintBreton3": "Game of power — first to 12 points",
+  "paletHintVendeen1": "Lead plate, brass pucks",
+  "paletHintVendeen2": "Throwing distance: 2.80 m",
+  "paletHintVendeen3": "Game of precision — first to 11/13 points",
   "paletTeamSize": "Players per team",
 
   "skRoundTitle": "Skull King — Round {round}/10",

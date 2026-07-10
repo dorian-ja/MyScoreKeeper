@@ -120,6 +120,8 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
                         _loadLastNames();
                       },
                     ),
+                    const SizedBox(height: 10),
+                    _ModeHintCard(mode: _mode),
                   ],
                 ),
               ),
@@ -207,6 +209,55 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ModeHintCard extends StatelessWidget {
+  final PaletMode mode;
+  const _ModeHintCard({required this.mode});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final hints = mode == PaletMode.breton
+        ? [l.paletHintBreton1, l.paletHintBreton2, l.paletHintBreton3]
+        : [l.paletHintVendeen1, l.paletHintVendeen2, l.paletHintVendeen3];
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: hints
+            .map(
+              (h) => Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                    Expanded(
+                      child: Text(
+                        h,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
