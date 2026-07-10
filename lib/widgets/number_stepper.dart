@@ -22,43 +22,65 @@ class NumberStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _btn(context, Icons.remove, value > min, () => onChanged(value - 1),
-            scheme),
+        _btn(
+          context,
+          Icons.remove,
+          'Diminuer',
+          value > min,
+          () => onChanged(value - 1),
+          scheme,
+        ),
         SizedBox(
           width: 40,
           child: Text(
             '$value',
             textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        _btn(context, Icons.add, value < max, () => onChanged(value + 1),
-            scheme),
+        _btn(
+          context,
+          Icons.add,
+          'Augmenter',
+          value < max,
+          () => onChanged(value + 1),
+          scheme,
+        ),
       ],
     );
   }
 
-  Widget _btn(BuildContext context, IconData icon, bool enabled,
-      VoidCallback onTap, ColorScheme scheme) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(size / 2),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: enabled
-              ? scheme.primaryContainer
-              : scheme.surfaceContainerHighest,
-        ),
-        child: Icon(
-          icon,
-          size: size * 0.5,
-          color: enabled ? scheme.onPrimaryContainer : scheme.outline,
+  Widget _btn(
+    BuildContext context,
+    IconData icon,
+    String semanticLabel,
+    bool enabled,
+    VoidCallback onTap,
+    ColorScheme scheme,
+  ) {
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: semanticLabel,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(size / 2),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: enabled
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest,
+          ),
+          child: Icon(
+            icon,
+            size: size * 0.5,
+            color: enabled ? scheme.onPrimaryContainer : scheme.outline,
+          ),
         ),
       ),
     );

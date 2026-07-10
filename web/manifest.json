@@ -1,11 +1,12 @@
 {
-    "name": "my_score_keeper",
-    "short_name": "my_score_keeper",
+    "name": "My Score Keeper",
+    "short_name": "ScoreKeeper",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#C8752E",
+    "background_color": "#FAF3E4",
     "theme_color": "#C8752E",
-    "description": "A new Flutter project.",
+    "description": "Compteur de scores pour vos jeux de société : Skull King, Tichu, Dame de Pique et plus encore.",
+    "lang": "fr",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

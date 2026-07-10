@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/game_type.dart';
 import '../../providers/dame_de_pique_provider.dart';
+import '../../services/player_names_store.dart';
+import '../../utils/player_names.dart';
 
 class DdpSetupScreen extends ConsumerStatefulWidget {
   const DdpSetupScreen({super.key});
@@ -12,11 +16,24 @@ class DdpSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
-  final _controllers = List.generate(
-    4,
-    (i) => TextEditingController(text: 'Joueur ${i + 1}'),
-  );
+  final _controllers = List.generate(4, (i) => TextEditingController());
   final _thresholdCtrl = TextEditingController(text: '100');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastNames();
+  }
+
+  Future<void> _loadLastNames() async {
+    final names = await PlayerNamesStore.load(GameType.dameDepique.name);
+    if (!mounted || names == null || names.isEmpty) return;
+    setState(() {
+      for (var i = 0; i < names.length && i < 4; i++) {
+        _controllers[i].text = names[i];
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -28,12 +45,13 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
   }
 
   void _startGame() {
-    final players = List.generate(
-      4,
-      (i) => _controllers[i].text.trim().isEmpty
-          ? 'Joueur ${i + 1}'
-          : _controllers[i].text.trim(),
-    );
+    final l = AppLocalizations.of(context);
+    final rawNames = [
+      for (var i = 0; i < 4; i++) _controllers[i].text.trim(),
+    ];
+    final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
+    if (!ensureUniqueNames(context, players)) return;
+    PlayerNamesStore.save(GameType.dameDepique.name, rawNames);
     final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
     ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
     context.go('/dame-de-pique/round');
@@ -41,14 +59,14 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Dame de Pique — Configuration')),
+      appBar: AppBar(title: Text(l.ddpSetupTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Joueurs',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(l.players, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...List.generate(4, (i) {
               return Padding(
@@ -56,7 +74,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                 child: TextFormField(
                   controller: _controllers[i],
                   decoration: InputDecoration(
-                    labelText: 'Joueur ${i + 1}',
+                    labelText: l.playerLabel(i + 1),
                     prefixIcon: const Icon(Icons.person_outline),
                   ),
                   textCapitalization: TextCapitalization.words,
@@ -70,23 +88,23 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Seuil de fin de partie',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      l.endThreshold,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text(
-                      'La partie s\'arrête quand un joueur atteint ce score.',
+                      l.endThresholdDesc,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      decoration: const InputDecoration(
-                        labelText: 'Score seuil',
-                        suffixText: 'points',
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                        labelText: l.thresholdScoreLabel,
+                        suffixText: l.pointsSuffix,
                       ),
                     ),
                   ],
@@ -96,7 +114,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
             const SizedBox(height: 24),
             FilledButton.icon(
               icon: const Icon(Icons.play_arrow),
-              label: const Text('Commencer la partie'),
+              label: Text(l.startGame),
               onPressed: _startGame,
             ),
           ],

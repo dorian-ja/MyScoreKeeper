@@ -37,9 +37,11 @@ class GenericGameState {
 
   List<String> get rankedPlayers {
     final sorted = List<String>.from(players);
-    sorted.sort((a, b) => higherWins
-        ? totalScore(b).compareTo(totalScore(a))
-        : totalScore(a).compareTo(totalScore(b)));
+    sorted.sort(
+      (a, b) => higherWins
+          ? totalScore(b).compareTo(totalScore(a))
+          : totalScore(a).compareTo(totalScore(b)),
+    );
     return sorted;
   }
 
@@ -49,20 +51,48 @@ class GenericGameState {
   bool get hasReachedMaxRounds =>
       maxRounds != null && completedRounds.length >= maxRounds!;
 
+  Map<String, dynamic> toJson() => {
+    'players': players,
+    'higherWins': higherWins,
+    'maxScore': maxScore,
+    'maxRounds': maxRounds,
+    'phase': phase.name,
+    'completedRounds': completedRounds.map((r) => r.toJson()).toList(),
+  };
+
+  factory GenericGameState.fromJson(Map<String, dynamic> j) => GenericGameState(
+    players: List<String>.from(j['players'] as List),
+    higherWins: j['higherWins'] as bool,
+    maxScore: j['maxScore'] as int?,
+    maxRounds: j['maxRounds'] as int?,
+    phase: GenericPhase.values.byName(j['phase'] as String),
+    completedRounds: (j['completedRounds'] as List)
+        .map(
+          (e) => GenericRoundData.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList(),
+  );
+
   GenericGameState copyWith({
     List<String>? players,
     bool? higherWins,
-    int? maxScore,
-    int? maxRounds,
+    // Sentinelle pour distinguer « non fourni » d'une remise à null explicite.
+    Object? maxScore = _unset,
+    Object? maxRounds = _unset,
     GenericPhase? phase,
     List<GenericRoundData>? completedRounds,
-  }) =>
-      GenericGameState(
-        players: players ?? this.players,
-        higherWins: higherWins ?? this.higherWins,
-        maxScore: maxScore ?? this.maxScore,
-        maxRounds: maxRounds ?? this.maxRounds,
-        phase: phase ?? this.phase,
-        completedRounds: completedRounds ?? this.completedRounds,
-      );
+  }) => GenericGameState(
+    players: players ?? this.players,
+    higherWins: higherWins ?? this.higherWins,
+    maxScore: identical(maxScore, _unset) ? this.maxScore : maxScore as int?,
+    maxRounds: identical(maxRounds, _unset)
+        ? this.maxRounds
+        : maxRounds as int?,
+    phase: phase ?? this.phase,
+    completedRounds: completedRounds ?? this.completedRounds,
+  );
 }
+
+/// Marqueur interne : un argument `copyWith` laissé à cette valeur signifie
+/// « ne pas modifier », ce qui permet de passer `null` explicitement.
+const Object _unset = Object();

@@ -40,16 +40,31 @@ class DdpGameState {
   bool get hasReachedThreshold =>
       players.any((p) => totalScore(p) >= threshold);
 
+  Map<String, dynamic> toJson() => {
+    'players': players,
+    'threshold': threshold,
+    'phase': phase.name,
+    'completedRounds': completedRounds.map((r) => r.toJson()).toList(),
+  };
+
+  factory DdpGameState.fromJson(Map<String, dynamic> j) => DdpGameState(
+    players: List<String>.from(j['players'] as List),
+    threshold: j['threshold'] as int,
+    phase: DdpPhase.values.byName(j['phase'] as String),
+    completedRounds: (j['completedRounds'] as List)
+        .map((e) => DdpRoundData.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
+  );
+
   DdpGameState copyWith({
     List<String>? players,
     int? threshold,
     DdpPhase? phase,
     List<DdpRoundData>? completedRounds,
-  }) =>
-      DdpGameState(
-        players: players ?? this.players,
-        threshold: threshold ?? this.threshold,
-        phase: phase ?? this.phase,
-        completedRounds: completedRounds ?? this.completedRounds,
-      );
+  }) => DdpGameState(
+    players: players ?? this.players,
+    threshold: threshold ?? this.threshold,
+    phase: phase ?? this.phase,
+    completedRounds: completedRounds ?? this.completedRounds,
+  );
 }

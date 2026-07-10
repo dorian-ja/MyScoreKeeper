@@ -1,46 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../models/game_history.dart';
+import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
 
 class HistoryDetailScreen extends ConsumerWidget {
   final String id;
   const HistoryDetailScreen({super.key, required this.id});
 
-  String _formatDate(DateTime dt) {
+  String _formatDate(DateTime dt, AppLocalizations l) {
     final day = dt.day.toString().padLeft(2, '0');
     final month = dt.month.toString().padLeft(2, '0');
     final year = dt.year;
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
-    return '$day/$month/$year à $h:$m';
+    return l.dateAtTime('$day/$month/$year', '$h:$m');
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final history = ref.watch(historyProvider);
     final entry = history.where((e) => e.id == id).firstOrNull;
 
     if (entry == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Partie introuvable')),
-        body: const Center(child: Text('Cette partie n\'existe plus.')),
+        appBar: AppBar(title: Text(l.gameNotFound)),
+        body: Center(child: Text(l.gameNoLongerExists)),
       );
     }
 
     final sorted = entry.playerOrTeamNames.toList()
-      ..sort((a, b) =>
-          (entry.finalScores[b] ?? 0).compareTo(entry.finalScores[a] ?? 0));
+      ..sort(
+        (a, b) =>
+            (entry.finalScores[b] ?? 0).compareTo(entry.finalScores[a] ?? 0),
+      );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(entry.gameType.displayName),
+        title: Text(entry.gameType.label(l)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(24),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              _formatDate(entry.playedAt),
+              _formatDate(entry.playedAt, l),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -61,17 +66,20 @@ class HistoryDetailScreen extends ConsumerWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Vainqueur',
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer)),
+                      Text(
+                        l.winner,
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
                       Text(
                         entry.winner,
                         style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -90,8 +98,10 @@ class HistoryDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Scores finaux',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l.finalScores,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   ...sorted.asMap().entries.map((e) {
                     final idx = e.key;
@@ -103,13 +113,16 @@ class HistoryDetailScreen extends ConsumerWidget {
                         children: [
                           SizedBox(
                             width: 28,
-                            child: Text('${idx + 1}.',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
+                            child: Text(
+                              '${idx + 1}.',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           Expanded(child: Text(name)),
                           Text(
-                            '$score pts',
+                            l.points(score),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -123,17 +136,15 @@ class HistoryDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           // Rounds
           if (entry.rounds.isNotEmpty) ...[
-            Text('Détail des manches (${entry.rounds.length})',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l.roundsDetail(entry.rounds.length),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             ...entry.rounds.asMap().entries.map((e) {
               final i = e.key;
               final r = e.value;
-              return _RoundCard(
-                roundIndex: i,
-                roundData: r,
-                entry: entry,
-              );
+              return _RoundCard(roundIndex: i, roundData: r, entry: entry);
             }),
           ],
         ],
@@ -155,9 +166,10 @@ class _RoundCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       child: ExpansionTile(
-        title: Text('Manche ${roundIndex + 1}'),
+        title: Text(l.roundNumber(roundIndex + 1)),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -171,7 +183,10 @@ class _RoundCard extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     switch (entry.gameType.name) {
       case 'skullKing':
-        return _SkullKingRound(data: roundData, players: entry.playerOrTeamNames);
+        return _SkullKingRound(
+          data: roundData,
+          players: entry.playerOrTeamNames,
+        );
       case 'tichu':
         return _TichuRound(data: roundData, players: entry.playerOrTeamNames);
       case 'dameDepique':
@@ -191,6 +206,7 @@ class _SkullKingRound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bids = Map<String, int>.from(data['bids'] as Map? ?? {});
     final tricks = Map<String, int>.from(data['tricksWon'] as Map? ?? {});
     final bonuses = Map<String, int>.from(data['bonuses'] as Map? ?? {});
@@ -202,8 +218,10 @@ class _SkullKingRound extends StatelessWidget {
         return Row(
           children: [
             Expanded(child: Text(p)),
-            Text('Annonce: $bid  Plis: $trick  Bonus: $bonus',
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              l.skRoundSummary(bid, trick, bonus),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         );
       }).toList(),
@@ -218,15 +236,20 @@ class _TichuRound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final sweep = data['sweep'] as String? ?? 'none';
     final teamAPoints = data['teamACardPoints'] as int? ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (sweep != 'none')
-          Text('Double victoire: ${sweep == 'teamA' ? players.first : players.last}'),
+          Text(
+            l.tichuDoubleVictorySummary(
+              sweep == 'teamA' ? players.first : players.last,
+            ),
+          ),
         if (sweep == 'none')
-          Text('Points cartes — Éq. A: $teamAPoints / Éq. B: ${100 - teamAPoints}'),
+          Text(l.tichuCardPointsSummary(teamAPoints, 100 - teamAPoints)),
       ],
     );
   }
@@ -239,16 +262,18 @@ class _DdpRound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final penalties =
-        Map<String, int>.from(data['penalties'] as Map? ?? {});
+    final l = AppLocalizations.of(context);
+    final penalties = Map<String, int>.from(data['penalties'] as Map? ?? {});
     return Column(
       children: players.map((p) {
         final pts = penalties[p] ?? 0;
         return Row(
           children: [
             Expanded(child: Text(p)),
-            Text('$pts pts',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              l.points(pts),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         );
       }).toList(),
@@ -263,6 +288,7 @@ class _GenericRound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final scores = Map<String, int>.from(data['scores'] as Map? ?? {});
     return Column(
       children: players.map((p) {
@@ -270,8 +296,10 @@ class _GenericRound extends StatelessWidget {
         return Row(
           children: [
             Expanded(child: Text(p)),
-            Text('$pts pts',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              l.points(pts),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         );
       }).toList(),

@@ -17,6 +17,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
       - name: Build web
         run: flutter build web --release --base-href /
 

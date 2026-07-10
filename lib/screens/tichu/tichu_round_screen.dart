@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/tichu_state.dart';
 import '../../providers/tichu_provider.dart';
+import '../../theme.dart';
 import '../../widgets/quit_game_button.dart';
+import '../../widgets/redirect_home.dart';
+import '../../widgets/signed_int_formatter.dart';
 
 class TichuRoundScreen extends ConsumerStatefulWidget {
   const TichuRoundScreen({super.key});
@@ -34,8 +37,11 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
   }
 
   void _submit(TichuGameState state) {
-    final teamAPoints =
-        (int.tryParse(_teamAPointsCtrl.text) ?? 50).clamp(0, 100);
+    // Aux règles officielles, une équipe peut marquer de -25 (Phénix) à 125.
+    final teamAPoints = (int.tryParse(_teamAPointsCtrl.text) ?? 50).clamp(
+      -25,
+      125,
+    );
     final roundData = TichuRoundData(
       announcements: Map.from(_announcements),
       announcementSuccess: Map.from(_success),
@@ -48,204 +54,224 @@ class _TichuRoundScreenState extends ConsumerState<TichuRoundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final state = ref.watch(tichuProvider);
+    if (state.phase == TichuPhase.setup) return const RedirectHome();
     _init(state);
-
-    if (state.phase == TichuPhase.setup) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
 
     final isTientsin = state.mode == TichuMode.tientsin;
     final sweepPoints = state.sweepBonus;
     final teamALabel = state.teamALabel;
     final teamBLabel = state.teamBLabel;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Tichu — Manche ${state.currentRound}'),
-        automaticallyImplyLeading: false,
-        leading: QuitGameButton(onConfirm: () {
-          ref.read(tichuProvider.notifier).reset();
-          context.go('/');
-        }),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Rappel règle Grand Tichu pour Tientsin
-                  if (isTientsin)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _InfoChip(
-                        icon: Icons.info_outline,
-                        text:
-                            'Tientsin : Grand Tichu avant la 7ème carte • Don de 2 cartes',
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l.tichuRoundTitle(state.currentRound)),
+          automaticallyImplyLeading: false,
+          leading: QuitGameButton(
+            onConfirm: () {
+              ref.read(tichuProvider.notifier).reset();
+              context.go('/');
+            },
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // Rappel règle Grand Tichu pour Tientsin
+                    if (isTientsin)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _InfoChip(
+                          icon: Icons.info_outline,
+                          text: l.tientsinInfo,
+                        ),
                       ),
-                    ),
 
-                  // Section Empire / Double victoire
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  isTientsin ? 'Empire ?' : 'Double victoire ?',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              Text(
-                                '+$sweepPoints pts',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (isTientsin) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Les 3 joueurs de la même équipe terminent 1er, 2ème et 3ème',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                          const SizedBox(height: 12),
-                          SegmentedButton<TichuSweep>(
-                            segments: [
-                              const ButtonSegment(
-                                  value: TichuSweep.none,
-                                  label: Text('Aucun')),
-                              ButtonSegment(
-                                  value: TichuSweep.teamA,
-                                  label: Text(teamALabel,
-                                      overflow: TextOverflow.ellipsis)),
-                              ButtonSegment(
-                                  value: TichuSweep.teamB,
-                                  label: Text(teamBLabel,
-                                      overflow: TextOverflow.ellipsis)),
-                            ],
-                            selected: {_sweep},
-                            onSelectionChanged: (s) =>
-                                setState(() => _sweep = s.first),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Points cartes (seulement si pas d'empire)
-                  if (_sweep == TichuSweep.none) ...[
-                    const SizedBox(height: 12),
+                    // Section Empire / Double victoire
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Points cartes',
-                                style:
-                                    Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
-                                  child: TextFormField(
-                                    controller: _teamAPointsCtrl,
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    decoration: InputDecoration(
-                                      labelText: '$teamALabel (pts)',
-                                    ),
-                                    onChanged: (_) => setState(() {}),
+                                  child: Text(
+                                    isTientsin
+                                        ? l.empireQuestion
+                                        : l.doubleVictoryQuestion,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: InputDecorator(
-                                    decoration: InputDecoration(
-                                      labelText: '$teamBLabel (pts)',
-                                    ),
-                                    child: Text(
-                                      '${100 - (int.tryParse(_teamAPointsCtrl.text) ?? 50).clamp(0, 100)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge,
-                                    ),
+                                Text(
+                                  l.sweepPts(sweepPoints),
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
+                            ),
+                            if (isTientsin) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                l.tientsinEmpireDesc,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            SegmentedButton<TichuSweep>(
+                              segments: [
+                                ButtonSegment(
+                                  value: TichuSweep.none,
+                                  label: Text(l.sweepNone),
+                                ),
+                                ButtonSegment(
+                                  value: TichuSweep.teamA,
+                                  label: Text(
+                                    teamALabel,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                ButtonSegment(
+                                  value: TichuSweep.teamB,
+                                  label: Text(
+                                    teamBLabel,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                              selected: {_sweep},
+                              onSelectionChanged: (s) =>
+                                  setState(() => _sweep = s.first),
                             ),
                           ],
                         ),
                       ),
                     ),
+
+                    // Points cartes (seulement si pas d'empire)
+                    if (_sweep == TichuSweep.none) ...[
+                      const SizedBox(height: 12),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.cardPoints,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _teamAPointsCtrl,
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            signed: true,
+                                          ),
+                                      inputFormatters: [
+                                        SignedIntTextInputFormatter(),
+                                      ],
+                                      decoration: InputDecoration(
+                                        labelText: l.teamPointsLabel(teamALabel),
+                                        helperText: l.cardPointsRange,
+                                      ),
+                                      onChanged: (_) => setState(() {}),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: l.teamPointsLabel(teamBLabel),
+                                      ),
+                                      child: Text(
+                                        '${100 - (int.tryParse(_teamAPointsCtrl.text) ?? 50).clamp(-25, 125)}',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    // Annonces par équipe
+                    const SizedBox(height: 12),
+                    Text(
+                      l.announcements,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Équipe A
+                    _TeamAnnouncementSection(
+                      teamLabel: teamALabel,
+                      color: tichuTeamAColor,
+                      players: state.teamAPlayers,
+                      announcements: _announcements,
+                      success: _success,
+                      onAnnouncementChanged: (p, v) =>
+                          setState(() => _announcements[p] = v),
+                      onSuccessChanged: (p, v) =>
+                          setState(() => _success[p] = v),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Équipe B
+                    _TeamAnnouncementSection(
+                      teamLabel: teamBLabel,
+                      color: tichuTeamBColor,
+                      players: state.teamBPlayers,
+                      announcements: _announcements,
+                      success: _success,
+                      onAnnouncementChanged: (p, v) =>
+                          setState(() => _announcements[p] = v),
+                      onSuccessChanged: (p, v) =>
+                          setState(() => _success[p] = v),
+                    ),
                   ],
-
-                  // Annonces par équipe
-                  const SizedBox(height: 12),
-                  Text('Annonces',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-
-                  // Équipe A
-                  _TeamAnnouncementSection(
-                    teamLabel: teamALabel,
-                    color: const Color(0xFF1B5E20),
-                    players: state.teamAPlayers,
-                    announcements: _announcements,
-                    success: _success,
-                    onAnnouncementChanged: (p, v) =>
-                        setState(() => _announcements[p] = v),
-                    onSuccessChanged: (p, v) =>
-                        setState(() => _success[p] = v),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Équipe B
-                  _TeamAnnouncementSection(
-                    teamLabel: teamBLabel,
-                    color: const Color(0xFF0D47A1),
-                    players: state.teamBPlayers,
-                    announcements: _announcements,
-                    success: _success,
-                    onAnnouncementChanged: (p, v) =>
-                        setState(() => _announcements[p] = v),
-                    onSuccessChanged: (p, v) =>
-                        setState(() => _success[p] = v),
-                  ),
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: FilledButton.icon(
-                icon: const Icon(Icons.check),
-                label: const Text('Valider la manche'),
-                onPressed: () => _submit(state),
-                style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50)),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.check),
+                  label: Text(l.validateRound),
+                  onPressed: () => _submit(state),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -274,8 +300,8 @@ class _InfoChip extends StatelessWidget {
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSecondaryContainer,
-                  ),
+                color: scheme.onSecondaryContainer,
+              ),
             ),
           ),
         ],
@@ -306,6 +332,7 @@ class _TeamAnnouncementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -313,14 +340,14 @@ class _TeamAnnouncementSection extends StatelessWidget {
         children: [
           Container(
             color: color,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               teamLabel,
               style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
             ),
           ),
           ...players.map((player) {
@@ -331,20 +358,22 @@ class _TeamAnnouncementSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(player,
-                      style: Theme.of(context).textTheme.titleSmall),
+                  Text(player, style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 8),
                   SegmentedButton<TichuAnnouncement>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
-                          value: TichuAnnouncement.none,
-                          label: Text('Rien')),
+                        value: TichuAnnouncement.none,
+                        label: Text(l.announceNone),
+                      ),
                       ButtonSegment(
-                          value: TichuAnnouncement.tichu,
-                          label: Text('Tichu\n+100/-100')),
+                        value: TichuAnnouncement.tichu,
+                        label: Text(l.announceTichu),
+                      ),
                       ButtonSegment(
-                          value: TichuAnnouncement.grandTichu,
-                          label: Text('Grand T.\n+200/-200')),
+                        value: TichuAnnouncement.grandTichu,
+                        label: Text(l.announceGrandTichu),
+                      ),
                     ],
                     selected: {ann},
                     onSelectionChanged: (s) =>
@@ -359,7 +388,7 @@ class _TeamAnnouncementSection extends StatelessWidget {
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                        isSuccess ? '✓ Réussi' : '✗ Échoué',
+                        isSuccess ? l.announceSucceeded : l.announceFailed,
                         style: TextStyle(
                           color: isSuccess
                               ? Theme.of(context).colorScheme.primary
