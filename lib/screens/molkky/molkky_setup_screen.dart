@@ -181,7 +181,9 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
                         title: Text(_missRuleLabel(l, rule)),
                         subtitle: Text(_missRuleDesc(l, rule)),
                         value: rule,
+                        // ignore: deprecated_member_use
                         groupValue: _missRule,
+                        // ignore: deprecated_member_use
                         onChanged: (v) => setState(() => _missRule = v!),
                       ),
                   ],
