@@ -81,6 +81,11 @@ class TichuScoreboardScreen extends ConsumerWidget {
                     ]..sort((a, b) => b.score.compareTo(a.score));
                     return buildShareText(l, l.gameTichu, teams);
                   },
+                  shareGameName: l.gameTichu,
+                  rankingBuilder: () => [
+                    (name: state.teamALabel, score: state.teamATotal),
+                    (name: state.teamBLabel, score: state.teamBTotal),
+                  ]..sort((a, b) => b.score.compareTo(a.score)),
                 ),
               ),
             ],

@@ -1,7 +1,10 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../l10n/app_localizations.dart';
+import 'share_image_card.dart';
 
 /// Construit le texte de partage d'une fin de partie.
 String buildShareText(
@@ -36,6 +39,11 @@ class ScoreboardActions extends StatefulWidget {
   final String Function() shareTextBuilder;
   final VoidCallback? onEndGame;
 
+  /// Nom du jeu et classement final pour le partage en image (podium).
+  /// Si `null`, seul le partage texte est proposé.
+  final String? shareGameName;
+  final List<({String name, int score})> Function()? rankingBuilder;
+
   const ScoreboardActions({
     super.key,
     required this.isFinished,
@@ -46,6 +54,8 @@ class ScoreboardActions extends StatefulWidget {
     required this.onHome,
     required this.shareTextBuilder,
     this.onEndGame,
+    this.shareGameName,
+    this.rankingBuilder,
   });
 
   @override
@@ -55,6 +65,8 @@ class ScoreboardActions extends StatefulWidget {
 class _ScoreboardActionsState extends State<ScoreboardActions> {
   bool _saved = false;
   bool _saving = false;
+  // Boundary hors-écran servant à capturer la carte « podium » en image.
+  final GlobalKey _shareBoundaryKey = GlobalKey();
 
   Future<void> _save() async {
     if (_saved || _saving) return;
@@ -73,6 +85,31 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
   Future<void> _share() async {
     final l = AppLocalizations.of(context);
     final text = widget.shareTextBuilder();
+
+    // Tente d'abord le partage en image (podium) si un classement est fourni.
+    if (widget.rankingBuilder != null) {
+      final bytes = await _captureImage();
+      if (bytes != null) {
+        try {
+          await SharePlus.instance.share(
+            ShareParams(
+              text: text,
+              files: [
+                XFile.fromData(
+                  bytes,
+                  mimeType: 'image/png',
+                  name: 'my_score_keeper.png',
+                ),
+              ],
+            ),
+          );
+          return;
+        } catch (_) {
+          // Repli sur le partage texte ci-dessous.
+        }
+      }
+    }
+
     try {
       await SharePlus.instance.share(ShareParams(text: text));
     } catch (_) {
@@ -82,6 +119,25 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
           context,
         ).showSnackBar(SnackBar(content: Text(l.summaryCopied)));
       }
+    }
+  }
+
+  /// Capture la carte podium hors-écran en PNG. Renvoie `null` en cas d'échec
+  /// (rendu non prêt, plateforme non supportée…), le partage texte prend alors
+  /// le relais.
+  Future<Uint8List?> _captureImage() async {
+    try {
+      // Laisse un frame au boundary pour se peindre.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final boundary =
+          _shareBoundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final image = await boundary.toImage(pixelRatio: 3);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List();
+    } catch (_) {
+      return null;
     }
   }
 
@@ -153,45 +209,65 @@ class _ScoreboardActionsState extends State<ScoreboardActions> {
       );
     }
 
-    return Column(
+    return Stack(
       children: [
-        FilledButton.icon(
-          icon: Icon(_saved ? Icons.check : Icons.save_outlined),
-          label: Text(_saved ? l.gameSavedButton : l.saveGame),
-          onPressed: _saved || _saving ? null : _save,
-          style: _fullWidth,
-        ),
-        const SizedBox(height: 8),
-        Row(
+        Column(
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.share_outlined),
-                label: Text(l.share),
-                onPressed: _share,
-                style: _fullWidthOutlined,
-              ),
+            FilledButton.icon(
+              icon: Icon(_saved ? Icons.check : Icons.save_outlined),
+              label: Text(_saved ? l.gameSavedButton : l.saveGame),
+              onPressed: _saved || _saving ? null : _save,
+              style: _fullWidth,
             ),
-            if (widget.canUndo) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.undo),
-                  label: Text(l.correct),
-                  onPressed: _confirmUndo,
-                  style: _fullWidthOutlined,
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.share_outlined),
+                    label: Text(l.share),
+                    onPressed: _share,
+                    style: _fullWidthOutlined,
+                  ),
                 ),
-              ),
-            ],
+                if (widget.canUndo) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.undo),
+                      label: Text(l.correct),
+                      onPressed: _confirmUndo,
+                      style: _fullWidthOutlined,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.home_outlined),
+              label: Text(l.backHome),
+              onPressed: widget.onHome,
+              style: _fullWidthOutlined,
+            ),
           ],
         ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.home_outlined),
-          label: Text(l.backHome),
-          onPressed: widget.onHome,
-          style: _fullWidthOutlined,
-        ),
+        // Carte podium peinte hors-écran, capturée à la demande pour le
+        // partage en image. Positionnée loin à gauche pour rester invisible.
+        if (widget.rankingBuilder != null)
+          Positioned(
+            left: -10000,
+            top: 0,
+            child: RepaintBoundary(
+              key: _shareBoundaryKey,
+              child: ShareImageCard(
+                gameName: widget.shareGameName ?? '',
+                ranking: widget.rankingBuilder!(),
+                pointsSuffix: l.pointsSuffix,
+                footer: l.shareFooter,
+              ),
+            ),
+          ),
       ],
     );
   }

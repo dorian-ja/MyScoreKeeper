@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../models/game_history.dart';
+import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
+import '../widgets/score_evolution_chart.dart';
 
 class HistoryDetailScreen extends ConsumerWidget {
   final String id;
@@ -16,6 +18,25 @@ class HistoryDetailScreen extends ConsumerWidget {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return l.dateAtTime('$day/$month/$year', '$h:$m');
+  }
+
+  /// Construit la courbe d'évolution pour les jeux dont les manches sont des
+  /// maps « nom → points » (mode Autre et Dame de Pique).
+  List<Widget> _buildChart(GameHistoryEntry entry) {
+    final String? key = switch (entry.gameType) {
+      GameType.autre => 'scores',
+      GameType.dameDepique => 'penalties',
+      _ => null,
+    };
+    if (key == null || entry.rounds.length < 2) return const [];
+    final rounds = <Map<String, int>>[
+      for (final r in entry.rounds)
+        Map<String, int>.from(r[key] as Map? ?? const {}),
+    ];
+    return [
+      ScoreEvolutionChart(players: entry.playerOrTeamNames, rounds: rounds),
+      const SizedBox(height: 16),
+    ];
   }
 
   @override
@@ -134,6 +155,8 @@ class HistoryDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Courbe d'évolution (jeux à manches « nom → points »).
+          ..._buildChart(entry),
           // Rounds
           if (entry.rounds.isNotEmpty) ...[
             Text(

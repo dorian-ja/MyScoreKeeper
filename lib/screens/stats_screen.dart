@@ -6,14 +6,32 @@ import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
 import '../widgets/game_thumbnail.dart';
+import '../widgets/player_avatar.dart';
 
-class StatsScreen extends ConsumerWidget {
+class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StatsScreen> createState() => _StatsScreenState();
+}
+
+class _StatsScreenState extends ConsumerState<StatsScreen> {
+  String? _selectedPlayer; // null = tous
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final history = ref.watch(historyProvider);
+
+    // Liste triée des joueurs, pour le filtre.
+    final allPlayers = <String>{
+      for (final e in history) ...e.playerOrTeamNames,
+    }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    // Un joueur retiré de l'historique ne doit plus rester sélectionné.
+    if (_selectedPlayer != null && !allPlayers.contains(_selectedPlayer)) {
+      _selectedPlayer = null;
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l.statistics)),
@@ -39,11 +57,66 @@ class StatsScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _GlobalCard(history: history),
-                const SizedBox(height: 16),
-                _PlayersCard(history: history),
+                if (allPlayers.isNotEmpty)
+                  _PlayerFilter(
+                    players: allPlayers,
+                    selected: _selectedPlayer,
+                    onChanged: (v) => setState(() => _selectedPlayer = v),
+                  ),
+                if (_selectedPlayer != null) ...[
+                  _HeadToHeadCard(history: history, player: _selectedPlayer!),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  _GlobalCard(history: history),
+                  const SizedBox(height: 16),
+                ],
+                _PlayersCard(history: history, highlight: _selectedPlayer),
               ],
             ),
+    );
+  }
+}
+
+class _PlayerFilter extends StatelessWidget {
+  final List<String> players;
+  final String? selected;
+  final ValueChanged<String?> onChanged;
+
+  const _PlayerFilter({
+    required this.players,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Icon(
+            Icons.filter_alt_outlined,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButton<String?>(
+              isExpanded: true,
+              value: selected,
+              underline: const SizedBox.shrink(),
+              items: [
+                DropdownMenuItem(value: null, child: Text(l.statsAllPlayers)),
+                ...players.map(
+                  (p) => DropdownMenuItem(value: p, child: Text(p)),
+                ),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -222,12 +295,16 @@ class _MiniStatRow extends StatelessWidget {
 
 class _PlayersCard extends StatelessWidget {
   final List<GameHistoryEntry> history;
-  const _PlayersCard({required this.history});
+  final String? highlight;
+  const _PlayersCard({required this.history, this.highlight});
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final stats = computePlayerStats(history);
+    var stats = computePlayerStats(history);
+    if (highlight != null) {
+      stats = stats.where((s) => s.name == highlight).toList();
+    }
 
     return Card(
       child: Padding(
@@ -271,6 +348,8 @@ class _PlayerRow extends StatelessWidget {
         children: [
           Row(
             children: [
+              PlayerAvatar(name: stats.name, size: 26),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   stats.name,
@@ -371,6 +450,127 @@ class _GameWinsBadge extends StatelessWidget {
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+}
+
+/// Bilan des confrontations directes d'un joueur : pour chaque adversaire avec
+/// qui il a partagé au moins une partie, ses victoires face à lui.
+class _Rivalry {
+  final String opponent;
+  int shared = 0;
+  int myWins = 0;
+  int theirWins = 0;
+  _Rivalry(this.opponent);
+}
+
+class _HeadToHeadCard extends StatelessWidget {
+  final List<GameHistoryEntry> history;
+  final String player;
+  const _HeadToHeadCard({required this.history, required this.player});
+
+  List<_Rivalry> _compute() {
+    final map = <String, _Rivalry>{};
+    for (final e in history) {
+      if (!e.playerOrTeamNames.contains(player)) continue;
+      for (final other in e.playerOrTeamNames) {
+        if (other == player) continue;
+        final r = map.putIfAbsent(other, () => _Rivalry(other));
+        r.shared++;
+        if (e.winner == player) {
+          r.myWins++;
+        } else if (e.winner == other) {
+          r.theirWins++;
+        }
+      }
+    }
+    final list = map.values.toList()
+      ..sort((a, b) => b.shared.compareTo(a.shared));
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final rivalries = _compute();
+    final played = history
+        .where((e) => e.playerOrTeamNames.contains(player))
+        .length;
+    final wins = history
+        .where((e) => e.playerOrTeamNames.contains(player) && e.winner == player)
+        .length;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                PlayerAvatar(name: player, size: 36),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    player,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                Text(
+                  '$wins / $played',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(l.headToHead, style: Theme.of(context).textTheme.bodySmall),
+            const Divider(height: 20),
+            if (rivalries.isEmpty)
+              Text(l.headToHeadEmpty)
+            else
+              ...rivalries.map(
+                (r) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      PlayerAvatar(name: r.opponent, size: 24),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          r.opponent,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '${r.myWins}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: r.myWins >= r.theirWins
+                              ? scheme.primary
+                              : scheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        ' – ',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                      Text('${r.theirWins}'),
+                      const SizedBox(width: 8),
+                      Text(
+                        l.gamesCount(r.shared),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

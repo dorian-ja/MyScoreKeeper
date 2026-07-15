@@ -15,6 +15,21 @@
   "winner": "Winner",
   "winnerLowest": "Winner (fewest points)",
 
+  "rosterTitle": "Player roster",
+  "rosterSubtitle": "Player colors and avatars",
+  "rosterAdd": "Add a player",
+  "rosterEdit": "Edit player",
+  "rosterEmpty": "No players yet. Add one, or play a game to see them here.",
+  "rosterExists": "This name already exists in the roster.",
+  "rosterNameLabel": "Name",
+  "rosterColor": "Color",
+  "rosterEmoji": "Emoji (optional)",
+  "statsAllPlayers": "All players",
+  "headToHead": "Head-to-head (direct wins)",
+  "headToHeadEmpty": "No shared opponents yet.",
+  "scoreEvolution": "Score evolution",
+  "editRound": "Edit this round",
+
   "points": "{count} pts",
 
   "playerLabel": "Player {number}",

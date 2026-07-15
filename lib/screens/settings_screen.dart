@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
@@ -46,6 +47,14 @@ class SettingsScreen extends ConsumerWidget {
                 DropdownMenuItem(value: 'en', child: Text(l.languageEnglish)),
               ],
             ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.groups_outlined),
+            title: Text(l.rosterTitle),
+            subtitle: Text(l.rosterSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/roster'),
           ),
           const Divider(),
           FutureBuilder<PackageInfo>(

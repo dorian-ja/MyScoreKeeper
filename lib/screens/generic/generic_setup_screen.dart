@@ -7,6 +7,7 @@ import '../../models/game_type.dart';
 import '../../models/generic_template.dart';
 import '../../providers/generic_provider.dart';
 import '../../services/generic_template_store.dart';
+import '../../providers/roster_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
@@ -161,6 +162,16 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     });
   }
 
+  /// Remplit le premier champ de nom encore vide avec un joueur du carnet.
+  void _fillFromRoster(String name) {
+    for (var i = 0; i < _playerCount; i++) {
+      if (_nameControllers[i].text.trim().isEmpty) {
+        setState(() => _nameControllers[i].text = name);
+        return;
+      }
+    }
+  }
+
   void _startGame() {
     final l = AppLocalizations.of(context);
     final rawNames = [
@@ -169,6 +180,7 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.autre.name, rawNames);
+    ref.read(rosterProvider.notifier).registerNames(players);
     final maxScore = _useMaxScore
         ? int.tryParse(_maxScoreCtrl.text) ?? 100
         : null;
@@ -385,6 +397,7 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
             const SizedBox(height: 16),
             Text(l.playerNames, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
+            _RosterChips(onPick: _fillFromRoster, controllers: _nameControllers),
             ...List.generate(_playerCount, (i) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -406,6 +419,49 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Puces des joueurs du carnet non encore saisis : un tap remplit le premier
+/// champ vide. Masqué si le carnet est vide ou tous déjà placés.
+class _RosterChips extends ConsumerWidget {
+  final ValueChanged<String> onPick;
+  final List<TextEditingController> controllers;
+
+  const _RosterChips({required this.onPick, required this.controllers});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roster = ref.watch(rosterProvider);
+    if (roster.isEmpty) return const SizedBox.shrink();
+    final used = {
+      for (final c in controllers)
+        if (c.text.trim().isNotEmpty) c.text.trim().toLowerCase(),
+    };
+    final available = roster
+        .where((p) => !used.contains(p.name.toLowerCase()))
+        .toList();
+    if (available.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: available.map((p) {
+          return ActionChip(
+            avatar: CircleAvatar(
+              backgroundColor: p.color,
+              child: p.emoji.isEmpty
+                  ? const SizedBox.shrink()
+                  : Text(p.emoji, style: const TextStyle(fontSize: 12)),
+            ),
+            label: Text(p.name),
+            onPressed: () => onPick(p.name),
+          );
+        }).toList(),
       ),
     );
   }

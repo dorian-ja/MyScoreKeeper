@@ -15,6 +15,21 @@
   "winner": "Vainqueur",
   "winnerLowest": "Vainqueur (moins de points)",
 
+  "rosterTitle": "Carnet de joueurs",
+  "rosterSubtitle": "Couleurs et avatars des joueurs",
+  "rosterAdd": "Ajouter un joueur",
+  "rosterEdit": "Modifier le joueur",
+  "rosterEmpty": "Aucun joueur pour l'instant. Ajoutez-en un, ou jouez une partie pour les retrouver ici.",
+  "rosterExists": "Ce nom existe déjà dans le carnet.",
+  "rosterNameLabel": "Nom",
+  "rosterColor": "Couleur",
+  "rosterEmoji": "Emoji (facultatif)",
+  "statsAllPlayers": "Tous les joueurs",
+  "headToHead": "Face-à-face (victoires directes)",
+  "headToHeadEmpty": "Aucun adversaire en commun pour l'instant.",
+  "scoreEvolution": "Évolution des scores",
+  "editRound": "Corriger cette manche",
+
   "points": "{count} pts",
   "@points": { "placeholders": { "count": { "type": "int" } } },
 

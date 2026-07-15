@@ -4,6 +4,7 @@ import 'screens/settings_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/history_detail_screen.dart';
 import 'screens/stats_screen.dart';
+import 'screens/roster/roster_screen.dart';
 import 'screens/skull_king/sk_setup_screen.dart';
 import 'screens/skull_king/sk_bid_screen.dart';
 import 'screens/skull_king/sk_result_screen.dart';
@@ -31,6 +32,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
     GoRoute(path: '/stats', builder: (_, __) => const StatsScreen()),
+    GoRoute(path: '/roster', builder: (_, __) => const RosterScreen()),
     GoRoute(
       path: '/history/:id',
       builder: (_, state) =>
