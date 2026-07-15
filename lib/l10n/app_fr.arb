@@ -31,6 +31,8 @@
   "editRound": "Corriger cette manche",
   "fromRoster": "Depuis le carnet",
   "rosterFieldsFull": "Tous les champs sont déjà remplis.",
+  "rosterAddShort": "Ajouter",
+  "rosterEditHint": "Appui long pour modifier",
 
   "points": "{count} pts",
   "@points": { "placeholders": { "count": { "type": "int" } } },

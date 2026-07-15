@@ -31,6 +31,8 @@
   "editRound": "Edit this round",
   "fromRoster": "From roster",
   "rosterFieldsFull": "All fields are already filled.",
+  "rosterAddShort": "Add",
+  "rosterEditHint": "Long-press to edit",
 
   "points": "{count} pts",
 
