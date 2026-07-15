@@ -86,6 +86,21 @@ class DameDepiqueNotifier extends StateNotifier<DdpGameState> {
     _persist();
   }
 
+  /// Corrige une manche déjà saisie (n'importe laquelle) et recalcule la fin
+  /// de partie éventuelle.
+  void editRound(int index, DdpRoundData data) {
+    if (index < 0 || index >= state.completedRounds.length) return;
+    final rounds = [...state.completedRounds]..[index] = data;
+    final reached = state.players.any(
+      (p) => _totalFor(p, rounds) >= state.threshold,
+    );
+    state = state.copyWith(
+      completedRounds: rounds,
+      phase: reached ? DdpPhase.finished : DdpPhase.scoreboard,
+    );
+    _persist();
+  }
+
   /// Annule la dernière manche : elle devra être resaisie entièrement.
   void undoLastRound() {
     if (state.completedRounds.isEmpty) return;

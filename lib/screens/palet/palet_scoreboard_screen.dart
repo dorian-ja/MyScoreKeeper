@@ -79,6 +79,11 @@ class PaletScoreboardScreen extends ConsumerWidget {
                     ]..sort((a, b) => b.score.compareTo(a.score));
                     return buildShareText(l, l.gamePalet, teams);
                   },
+                  shareGameName: l.gamePalet,
+                  rankingBuilder: () => [
+                    (name: state.teamALabel, score: state.teamATotal),
+                    (name: state.teamBLabel, score: state.teamBTotal),
+                  ]..sort((a, b) => b.score.compareTo(a.score)),
                 ),
               ),
             ],

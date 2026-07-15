@@ -7,9 +7,11 @@ import '../../models/game_type.dart';
 import '../../models/generic_template.dart';
 import '../../providers/generic_provider.dart';
 import '../../services/generic_template_store.dart';
+import '../../providers/roster_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
+import '../../widgets/roster_selector.dart';
 
 class GenericSetupScreen extends ConsumerStatefulWidget {
   const GenericSetupScreen({super.key});
@@ -38,21 +40,14 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
       _maxPlayers,
       (i) => TextEditingController(),
     );
-    _loadSavedData();
+    _loadTemplates();
   }
 
-  Future<void> _loadSavedData() async {
-    final names = await PlayerNamesStore.load(GameType.autre.name);
+  Future<void> _loadTemplates() async {
     final templates = await GenericTemplateStore.load();
     if (!mounted) return;
     setState(() {
       _templates = templates;
-      if (names != null && names.isNotEmpty) {
-        _playerCount = names.length.clamp(2, _maxPlayers);
-        for (var i = 0; i < names.length && i < _maxPlayers; i++) {
-          _nameControllers[i].text = names[i];
-        }
-      }
     });
   }
 
@@ -169,6 +164,7 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.autre.name, rawNames);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final maxScore = _useMaxScore
         ? int.tryParse(_maxScoreCtrl.text) ?? 100
         : null;
@@ -385,6 +381,11 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
             const SizedBox(height: 16),
             Text(l.playerNames, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
+            RosterSelector(
+              controllers: _nameControllers.sublist(0, _playerCount),
+              onChanged: () => setState(() {}),
+            ),
+            const SizedBox(height: 8),
             ...List.generate(_playerCount, (i) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -410,3 +411,4 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     );
   }
 }
+

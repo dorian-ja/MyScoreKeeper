@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../providers/dame_de_pique_provider.dart';
+import '../../providers/roster_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
+import '../../widgets/roster_selector.dart';
 
 class DdpSetupScreen extends ConsumerStatefulWidget {
   const DdpSetupScreen({super.key});
@@ -18,22 +20,6 @@ class DdpSetupScreen extends ConsumerStatefulWidget {
 class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
   final _controllers = List.generate(4, (i) => TextEditingController());
   final _thresholdCtrl = TextEditingController(text: '100');
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLastNames();
-  }
-
-  Future<void> _loadLastNames() async {
-    final names = await PlayerNamesStore.load(GameType.dameDepique.name);
-    if (!mounted || names == null || names.isEmpty) return;
-    setState(() {
-      for (var i = 0; i < names.length && i < 4; i++) {
-        _controllers[i].text = names[i];
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -52,6 +38,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.dameDepique.name, rawNames);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
     ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
     context.go('/dame-de-pique/round');
@@ -67,6 +54,11 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Text(l.players, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            RosterSelector(
+              controllers: _controllers,
+              onChanged: () => setState(() {}),
+            ),
             const SizedBox(height: 8),
             ...List.generate(4, (i) {
               return Padding(

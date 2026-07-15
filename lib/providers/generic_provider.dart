@@ -95,6 +95,19 @@ class GenericGameNotifier extends StateNotifier<GenericGameState> {
     _persist();
   }
 
+  /// Corrige une manche déjà saisie (n'importe laquelle) et recalcule la fin
+  /// de partie éventuelle.
+  void editRound(int index, GenericRoundData data) {
+    if (index < 0 || index >= state.completedRounds.length) return;
+    final rounds = [...state.completedRounds]..[index] = data;
+    final updated = state.copyWith(completedRounds: rounds);
+    final finished = updated.hasReachedMaxScore || updated.hasReachedMaxRounds;
+    state = updated.copyWith(
+      phase: finished ? GenericPhase.finished : GenericPhase.scoreboard,
+    );
+    _persist();
+  }
+
   /// Annule la dernière manche : elle devra être resaisie entièrement.
   void undoLastRound() {
     if (state.completedRounds.isEmpty) return;

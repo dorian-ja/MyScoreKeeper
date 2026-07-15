@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../models/game_history.dart';
+import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
 import '../providers/history_provider.dart';
+import '../widgets/game_share.dart';
+import '../widgets/score_evolution_chart.dart';
 
 class HistoryDetailScreen extends ConsumerWidget {
   final String id;
@@ -16,6 +19,25 @@ class HistoryDetailScreen extends ConsumerWidget {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return l.dateAtTime('$day/$month/$year', '$h:$m');
+  }
+
+  /// Construit la courbe d'évolution pour les jeux dont les manches sont des
+  /// maps « nom → points » (mode Autre et Dame de Pique).
+  List<Widget> _buildChart(GameHistoryEntry entry) {
+    final String? key = switch (entry.gameType) {
+      GameType.autre => 'scores',
+      GameType.dameDepique => 'penalties',
+      _ => null,
+    };
+    if (key == null || entry.rounds.length < 2) return const [];
+    final rounds = <Map<String, int>>[
+      for (final r in entry.rounds)
+        Map<String, int>.from(r[key] as Map? ?? const {}),
+    ];
+    return [
+      ScoreEvolutionChart(players: entry.playerOrTeamNames, rounds: rounds),
+      const SizedBox(height: 16),
+    ];
   }
 
   @override
@@ -31,123 +53,153 @@ class HistoryDetailScreen extends ConsumerWidget {
       );
     }
 
+    // Classement gagnant-en-premier : le score le plus haut gagne dans la
+    // plupart des jeux, mais certains (Dame de Pique, mode Autre en décroissant)
+    // récompensent le score le plus bas. On déduit le sens à partir du gagnant
+    // stocké pour rester correct dans tous les cas.
+    final winnerScore = entry.finalScores[entry.winner] ?? 0;
+    final scores = entry.finalScores.values;
+    final ascending =
+        scores.isNotEmpty &&
+        winnerScore <= scores.reduce((a, b) => a < b ? a : b) &&
+        winnerScore != scores.reduce((a, b) => a > b ? a : b);
     final sorted = entry.playerOrTeamNames.toList()
-      ..sort(
-        (a, b) =>
-            (entry.finalScores[b] ?? 0).compareTo(entry.finalScores[a] ?? 0),
-      );
+      ..sort((a, b) {
+        final sa = entry.finalScores[a] ?? 0;
+        final sb = entry.finalScores[b] ?? 0;
+        return ascending ? sa.compareTo(sb) : sb.compareTo(sa);
+      });
+    final shareRanking = [
+      for (final name in sorted)
+        (name: name, score: entry.finalScores[name] ?? 0),
+    ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(entry.gameType.label(l)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(24),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              _formatDate(entry.playedAt, l),
-              style: Theme.of(context).textTheme.bodySmall,
+    return GameShareScope(
+      gameName: entry.gameType.label(l),
+      ranking: shareRanking,
+      builder: (context, share) => Scaffold(
+        appBar: AppBar(
+          title: Text(entry.gameType.label(l)),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: l.share,
+              onPressed: share,
             ),
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Winner
-          Card(
-            color: Theme.of(context).colorScheme.primaryContainer,
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(24),
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Text('🏆', style: TextStyle(fontSize: 32)),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l.winner,
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      Text(
-                        entry.winner,
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                _formatDate(entry.playedAt, l),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          // Final scores
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.finalScores,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  ...sorted.asMap().entries.map((e) {
-                    final idx = e.key;
-                    final name = e.value;
-                    final score = entry.finalScores[name] ?? 0;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 28,
-                            child: Text(
-                              '${idx + 1}.',
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Winner
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Text('🏆', style: TextStyle(fontSize: 32)),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.winner,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        Text(
+                          entry.winner,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Final scores
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.finalScores,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ...sorted.asMap().entries.map((e) {
+                      final idx = e.key;
+                      final name = e.value;
+                      final score = entry.finalScores[name] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 28,
+                              child: Text(
+                                '${idx + 1}.',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Text(name)),
+                            Text(
+                              l.points(score),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                          Expanded(child: Text(name)),
-                          Text(
-                            l.points(score),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // Rounds
-          if (entry.rounds.isNotEmpty) ...[
-            Text(
-              l.roundsDetail(entry.rounds.length),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            ...entry.rounds.asMap().entries.map((e) {
-              final i = e.key;
-              final r = e.value;
-              return _RoundCard(roundIndex: i, roundData: r, entry: entry);
-            }),
+            const SizedBox(height: 16),
+            // Courbe d'évolution (jeux à manches « nom → points »).
+            ..._buildChart(entry),
+            // Rounds
+            if (entry.rounds.isNotEmpty) ...[
+              Text(
+                l.roundsDetail(entry.rounds.length),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              ...entry.rounds.asMap().entries.map((e) {
+                final i = e.key;
+                final r = e.value;
+                return _RoundCard(roundIndex: i, roundData: r, entry: entry);
+              }),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

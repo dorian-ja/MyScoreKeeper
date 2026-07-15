@@ -85,6 +85,11 @@ class SkScoreboardScreen extends ConsumerWidget {
                     for (final p in ranked)
                       (name: p, score: state.totalScore(p)),
                   ]),
+                  shareGameName: l.gameSkullKing,
+                  rankingBuilder: () => [
+                    for (final p in ranked)
+                      (name: p, score: state.totalScore(p)),
+                  ],
                 ),
               ),
             ],

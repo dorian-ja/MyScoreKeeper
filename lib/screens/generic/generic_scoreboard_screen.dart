@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/generic_state.dart';
 import '../../providers/generic_provider.dart';
+import '../../widgets/edit_round_dialog.dart';
+import '../../widgets/player_avatar.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/round_history_table.dart';
+import '../../widgets/score_evolution_chart.dart';
 import '../../widgets/scoreboard_actions.dart';
 import '../../widgets/winner_banner.dart';
 
@@ -53,12 +56,38 @@ class GenericScoreboardScreen extends ConsumerWidget {
                     ],
                     _ScoreTable(state: state),
                     const SizedBox(height: 16),
+                    if (state.completedRounds.length >= 2) ...[
+                      ScoreEvolutionChart(
+                        players: state.players,
+                        rounds: [
+                          for (final r in state.completedRounds) r.scores,
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     if (state.completedRounds.isNotEmpty)
                       RoundHistoryTable(
                         players: state.players,
                         rounds: [
                           for (final r in state.completedRounds) r.scores,
                         ],
+                        onEditRound: (i) async {
+                          final notifier = ref.read(
+                            genericGameProvider.notifier,
+                          );
+                          final result = await showEditRoundDialog(
+                            context: context,
+                            title: l.roundNumber(i + 1),
+                            players: state.players,
+                            initial: state.completedRounds[i].scores,
+                          );
+                          if (result != null) {
+                            notifier.editRound(
+                              i,
+                              GenericRoundData(scores: result),
+                            );
+                          }
+                        },
                       ),
                   ],
                 ),
@@ -91,6 +120,11 @@ class GenericScoreboardScreen extends ConsumerWidget {
                     for (final p in ranked)
                       (name: p, score: state.totalScore(p)),
                   ]),
+                  shareGameName: l.ourGame,
+                  rankingBuilder: () => [
+                    for (final p in ranked)
+                      (name: p, score: state.totalScore(p)),
+                  ],
                 ),
               ),
             ],
@@ -152,6 +186,8 @@ class _ScoreTable extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
+                    PlayerAvatar(name: player, size: 28),
+                    const SizedBox(width: 8),
                     Expanded(child: Text(isLeader ? '$player 👑' : player)),
                     Text(
                       l.points(total),

@@ -73,6 +73,11 @@ class MolkkyScoreboardScreen extends ConsumerWidget {
                     ];
                     return buildShareText(l, l.gameMolkky, ranking);
                   },
+                  shareGameName: l.gameMolkky,
+                  rankingBuilder: () => [
+                    for (final t in state.ranking)
+                      (name: state.teamLabel(t), score: state.scoreOf(t)),
+                  ],
                 ),
               ),
             ],

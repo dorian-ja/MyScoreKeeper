@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/dame_de_pique_state.dart';
 import '../../providers/dame_de_pique_provider.dart';
+import '../../widgets/edit_round_dialog.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/round_history_table.dart';
+import '../../widgets/score_evolution_chart.dart';
 import '../../widgets/scoreboard_actions.dart';
 import '../../widgets/winner_banner.dart';
 
@@ -50,12 +52,38 @@ class DdpScoreboardScreen extends ConsumerWidget {
                     ],
                     _ScoreTable(state: state),
                     const SizedBox(height: 16),
+                    if (state.completedRounds.length >= 2) ...[
+                      ScoreEvolutionChart(
+                        players: state.players,
+                        rounds: [
+                          for (final r in state.completedRounds) r.penalties,
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     if (state.completedRounds.isNotEmpty)
                       RoundHistoryTable(
                         players: state.players,
                         rounds: [
                           for (final r in state.completedRounds) r.penalties,
                         ],
+                        onEditRound: (i) async {
+                          final notifier = ref.read(
+                            dameDepiqueProvider.notifier,
+                          );
+                          final result = await showEditRoundDialog(
+                            context: context,
+                            title: l.roundNumber(i + 1),
+                            players: state.players,
+                            initial: state.completedRounds[i].penalties,
+                          );
+                          if (result != null) {
+                            notifier.editRound(
+                              i,
+                              DdpRoundData(penalties: result),
+                            );
+                          }
+                        },
                       ),
                   ],
                 ),
@@ -83,6 +111,11 @@ class DdpScoreboardScreen extends ConsumerWidget {
                     for (final p in ranked)
                       (name: p, score: state.totalScore(p)),
                   ]),
+                  shareGameName: l.gameDameDePique,
+                  rankingBuilder: () => [
+                    for (final p in ranked)
+                      (name: p, score: state.totalScore(p)),
+                  ],
                 ),
               ),
             ],

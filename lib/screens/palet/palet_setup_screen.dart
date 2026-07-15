@@ -6,10 +6,12 @@ import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../models/palet_state.dart';
 import '../../providers/palet_provider.dart';
+import '../../providers/roster_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../theme.dart';
 import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
+import '../../widgets/roster_selector.dart';
 
 class PaletSetupScreen extends ConsumerStatefulWidget {
   const PaletSetupScreen({super.key});
@@ -34,29 +36,6 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
   final _targetCtrl = TextEditingController(text: '500');
 
   @override
-  void initState() {
-    super.initState();
-    _loadLastNames();
-  }
-
-  Future<void> _loadLastNames() async {
-    final names = await PlayerNamesStore.load(
-      '${GameType.palet.name}_${_mode.name}',
-    );
-    if (!mounted || names == null || names.isEmpty) return;
-    final size = (names.length ~/ 2).clamp(1, _maxTeamSize);
-    setState(() {
-      _teamSize = size;
-      for (var i = 0; i < size && i < names.length; i++) {
-        _controllers[i].text = names[i];
-      }
-      for (var i = 0; i < size && size + i < names.length; i++) {
-        _controllers[_maxTeamSize + i].text = names[size + i];
-      }
-    });
-  }
-
-  @override
   void dispose() {
     for (final c in _controllers) {
       c.dispose();
@@ -75,6 +54,7 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save('${GameType.palet.name}_${_mode.name}', rawNames);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final target = int.tryParse(_targetCtrl.text) ?? 500;
     ref
         .read(paletProvider.notifier)
@@ -117,7 +97,6 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
                       selected: {_mode},
                       onSelectionChanged: (s) {
                         setState(() => _mode = s.first);
-                        _loadLastNames();
                       },
                     ),
                     const SizedBox(height: 10),
@@ -147,6 +126,15 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+
+            RosterSelector(
+              controllers: [
+                ..._controllers.sublist(0, _teamSize),
+                ..._controllers.sublist(_maxTeamSize, _maxTeamSize + _teamSize),
+              ],
+              onChanged: () => setState(() {}),
             ),
             const SizedBox(height: 12),
 

@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../providers/molkky_provider.dart';
+import '../../providers/roster_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
+import '../../widgets/roster_selector.dart';
 import 'molkky_theme.dart';
 
 class MolkkySetupScreen extends ConsumerStatefulWidget {
@@ -35,22 +37,6 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
   final _targetCtrl = TextEditingController(text: '50');
 
   @override
-  void initState() {
-    super.initState();
-    _loadLastNames();
-  }
-
-  Future<void> _loadLastNames() async {
-    final names = await PlayerNamesStore.load(GameType.molkky.name);
-    if (!mounted || names == null || names.isEmpty) return;
-    setState(() {
-      for (var i = 0; i < names.length && i < _controllers.length; i++) {
-        _controllers[i].text = names[i];
-      }
-    });
-  }
-
-  @override
   void dispose() {
     for (final c in _controllers) {
       c.dispose();
@@ -75,6 +61,11 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
     if (!ensureUniqueNames(context, allNames)) return;
 
     PlayerNamesStore.save(GameType.molkky.name, [
+      for (var t = 0; t < _teamCount; t++)
+        for (var p = 0; p < _teamSize; p++)
+          _controllers[_ctrlIndex(t, p)].text.trim(),
+    ]);
+    ref.read(rosterProvider.notifier).registerNames([
       for (var t = 0; t < _teamCount; t++)
         for (var p = 0; p < _teamSize; p++)
           _controllers[_ctrlIndex(t, p)].text.trim(),
@@ -136,6 +127,15 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            RosterSelector(
+              controllers: [
+                for (var t = 0; t < _teamCount; t++)
+                  for (var p = 0; p < _teamSize; p++)
+                    _controllers[_ctrlIndex(t, p)],
+              ],
+              onChanged: () => setState(() {}),
             ),
             const SizedBox(height: 12),
             for (var t = 0; t < _teamCount; t++) ...[
