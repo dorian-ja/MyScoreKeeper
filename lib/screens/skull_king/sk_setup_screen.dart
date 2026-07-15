@@ -45,7 +45,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.skullKing.name, rawNames);
-    ref.read(rosterProvider.notifier).registerNames(players);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     ref.read(skullKingProvider.notifier).startGame(players, _scoringMode);
     context.go('/skull-king/bid');
   }

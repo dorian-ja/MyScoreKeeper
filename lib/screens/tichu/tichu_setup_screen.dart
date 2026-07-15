@@ -49,7 +49,7 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
       '${GameType.tichu.name}_${_mode.name}',
       rawNames,
     );
-    ref.read(rosterProvider.notifier).registerNames(players);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final target = int.tryParse(_targetCtrl.text) ?? 1000;
     ref.read(tichuProvider.notifier).startGame(players, target, _mode);
     context.go('/tichu/round');

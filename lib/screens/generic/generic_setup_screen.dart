@@ -164,7 +164,7 @@ class _GenericSetupScreenState extends ConsumerState<GenericSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.autre.name, rawNames);
-    ref.read(rosterProvider.notifier).registerNames(players);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final maxScore = _useMaxScore
         ? int.tryParse(_maxScoreCtrl.text) ?? 100
         : null;

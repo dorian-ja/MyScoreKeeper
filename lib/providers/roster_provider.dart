@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/player_profile.dart';
 import '../services/player_roster_store.dart';
-import 'history_provider.dart';
 
 final rosterProvider =
     StateNotifierProvider<RosterNotifier, List<PlayerProfile>>((ref) {
-      return RosterNotifier(ref);
+      return RosterNotifier();
     });
 
 /// Renvoie la couleur associée à un joueur : celle de son profil s'il existe
@@ -34,22 +33,16 @@ final playerProfileProvider = Provider.family<PlayerProfile?, String>((
 });
 
 class RosterNotifier extends StateNotifier<List<PlayerProfile>> {
-  RosterNotifier(this._ref) : super([]) {
+  RosterNotifier() : super([]) {
     _init();
   }
 
-  final Ref _ref;
-
   Future<void> _init() async {
+    // Le carnet ne se peuple qu'avec les noms réellement saisis au démarrage
+    // d'une partie (via `registerNames`). On ne l'alimente pas depuis
+    // l'historique : celui-ci contient les noms par défaut résolus
+    // (« Joueur 1 »…), qui pollueraient le carnet à chaque lancement.
     state = await PlayerRosterStore.load();
-    // Alimente le carnet avec les noms déjà présents dans l'historique, puis
-    // reste à l'écoute des nouvelles parties sauvegardées.
-    _ingestNames(
-      _ref.read(historyProvider).expand((e) => e.playerOrTeamNames),
-    );
-    _ref.listen(historyProvider, (_, next) {
-      _ingestNames(next.expand((e) => e.playerOrTeamNames));
-    });
   }
 
   /// Ajoute au carnet les noms encore inconnus, avec une couleur déterministe.

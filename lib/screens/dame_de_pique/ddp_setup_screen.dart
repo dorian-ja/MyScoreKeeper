@@ -38,7 +38,7 @@ class _DdpSetupScreenState extends ConsumerState<DdpSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.dameDepique.name, rawNames);
-    ref.read(rosterProvider.notifier).registerNames(players);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final threshold = int.tryParse(_thresholdCtrl.text) ?? 100;
     ref.read(dameDepiqueProvider.notifier).startGame(players, threshold);
     context.go('/dame-de-pique/round');

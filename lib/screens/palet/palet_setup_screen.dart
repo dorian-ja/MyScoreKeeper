@@ -54,7 +54,7 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save('${GameType.palet.name}_${_mode.name}', rawNames);
-    ref.read(rosterProvider.notifier).registerNames(players);
+    ref.read(rosterProvider.notifier).registerNames(rawNames);
     final target = int.tryParse(_targetCtrl.text) ?? 500;
     ref
         .read(paletProvider.notifier)

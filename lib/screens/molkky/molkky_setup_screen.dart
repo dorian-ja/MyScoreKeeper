@@ -65,7 +65,11 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
         for (var p = 0; p < _teamSize; p++)
           _controllers[_ctrlIndex(t, p)].text.trim(),
     ]);
-    ref.read(rosterProvider.notifier).registerNames(allNames);
+    ref.read(rosterProvider.notifier).registerNames([
+      for (var t = 0; t < _teamCount; t++)
+        for (var p = 0; p < _teamSize; p++)
+          _controllers[_ctrlIndex(t, p)].text.trim(),
+    ]);
     final target = int.tryParse(_targetCtrl.text) ?? 50;
     ref
         .read(molkkyProvider.notifier)
