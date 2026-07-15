@@ -6,22 +6,9 @@ import 'package:share_plus/share_plus.dart';
 import '../l10n/app_localizations.dart';
 import 'share_image_card.dart';
 
-/// Construit le texte de partage d'une fin de partie.
-String buildShareText(
-  AppLocalizations l,
-  String gameName,
-  List<({String name, int score})> ranking,
-) {
-  final buffer = StringBuffer();
-  if (ranking.isNotEmpty) {
-    buffer.writeln(l.shareWinLine(ranking.first.name, gameName));
-  }
-  for (var i = 0; i < ranking.length; i++) {
-    buffer.writeln(l.shareRankLine(i + 1, ranking[i].name, ranking[i].score));
-  }
-  buffer.write(l.shareFooter);
-  return buffer.toString();
-}
+// `buildShareText` vit désormais dans game_share.dart ; ré-exporté ici pour que
+// les écrans qui importent scoreboard_actions.dart y aient toujours accès.
+export 'game_share.dart' show buildShareText;
 
 /// Barre d'actions commune aux scoreboards des 4 jeux.
 ///
