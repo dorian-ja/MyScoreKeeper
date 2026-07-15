@@ -29,6 +29,8 @@
   "headToHeadEmpty": "No shared opponents yet.",
   "scoreEvolution": "Score evolution",
   "editRound": "Edit this round",
+  "fromRoster": "From roster",
+  "rosterFieldsFull": "All fields are already filled.",
 
   "points": "{count} pts",
 

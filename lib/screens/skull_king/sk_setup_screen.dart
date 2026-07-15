@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../models/skull_king_state.dart';
+import '../../providers/roster_provider.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
 import '../../widgets/number_stepper.dart';
+import '../../widgets/roster_selector.dart';
 
 class SkSetupScreen extends ConsumerStatefulWidget {
   const SkSetupScreen({super.key});
@@ -25,18 +27,6 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
   void initState() {
     super.initState();
     _controllers = List.generate(8, (i) => TextEditingController());
-    _loadLastNames();
-  }
-
-  Future<void> _loadLastNames() async {
-    final names = await PlayerNamesStore.load(GameType.skullKing.name);
-    if (!mounted || names == null || names.isEmpty) return;
-    setState(() {
-      _playerCount = names.length.clamp(2, 8);
-      for (var i = 0; i < names.length && i < 8; i++) {
-        _controllers[i].text = names[i];
-      }
-    });
   }
 
   @override
@@ -55,6 +45,7 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
     final players = resolvePlayerNames(rawNames, defaultName: l.playerLabel);
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save(GameType.skullKing.name, rawNames);
+    ref.read(rosterProvider.notifier).registerNames(players);
     ref.read(skullKingProvider.notifier).startGame(players, _scoringMode);
     context.go('/skull-king/bid');
   }
@@ -127,6 +118,11 @@ class _SkSetupScreenState extends ConsumerState<SkSetupScreen> {
             ),
             const SizedBox(height: 16),
             Text(l.playerNames, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            RosterSelector(
+              controllers: _controllers.sublist(0, _playerCount),
+              onChanged: () => setState(() {}),
+            ),
             const SizedBox(height: 8),
             ...List.generate(_playerCount, (i) {
               return Padding(

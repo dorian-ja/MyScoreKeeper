@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
 import '../../models/tichu_state.dart';
+import '../../providers/roster_provider.dart';
 import '../../providers/tichu_provider.dart';
 import '../../services/player_names_store.dart';
 import '../../utils/player_names.dart';
 import '../../theme.dart';
+import '../../widgets/roster_selector.dart';
 
 class TichuSetupScreen extends ConsumerStatefulWidget {
   const TichuSetupScreen({super.key});
@@ -26,24 +28,6 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
 
   int get _teamSize => _mode == TichuMode.nankin ? 2 : 3;
   int get _totalPlayers => _teamSize * 2;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLastNames();
-  }
-
-  Future<void> _loadLastNames() async {
-    final names = await PlayerNamesStore.load(
-      '${GameType.tichu.name}_${_mode.name}',
-    );
-    if (!mounted || names == null || names.isEmpty) return;
-    setState(() {
-      for (var i = 0; i < names.length && i < 6; i++) {
-        _controllers[i].text = names[i];
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -65,6 +49,7 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
       '${GameType.tichu.name}_${_mode.name}',
       rawNames,
     );
+    ref.read(rosterProvider.notifier).registerNames(players);
     final target = int.tryParse(_targetCtrl.text) ?? 1000;
     ref.read(tichuProvider.notifier).startGame(players, target, _mode);
     context.go('/tichu/round');
@@ -107,7 +92,6 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                       selected: {_mode},
                       onSelectionChanged: (s) {
                         setState(() => _mode = s.first);
-                        _loadLastNames();
                       },
                     ),
                     const SizedBox(height: 12),
@@ -115,6 +99,12 @@ class _TichuSetupScreenState extends ConsumerState<TichuSetupScreen> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+
+            RosterSelector(
+              controllers: _controllers.sublist(0, _totalPlayers),
+              onChanged: () => setState(() {}),
             ),
             const SizedBox(height: 12),
 

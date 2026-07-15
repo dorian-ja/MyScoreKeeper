@@ -29,6 +29,8 @@
   "headToHeadEmpty": "Aucun adversaire en commun pour l'instant.",
   "scoreEvolution": "Évolution des scores",
   "editRound": "Corriger cette manche",
+  "fromRoster": "Depuis le carnet",
+  "rosterFieldsFull": "Tous les champs sont déjà remplis.",
 
   "points": "{count} pts",
   "@points": { "placeholders": { "count": { "type": "int" } } },
