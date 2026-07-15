@@ -164,9 +164,25 @@ class _RuleHintCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final hints = mode == BeloteMode.classique
-        ? [l.beloteClassiqueHint1, l.beloteClassiqueHint2, l.beloteClassiqueHint3]
-        : [l.beloteCoincheHint1, l.beloteCoincheHint2, l.beloteCoincheHint3];
+    final isClassique = mode == BeloteMode.classique;
+    final intro = isClassique ? l.beloteClassiqueIntro : l.beloteCoincheIntro;
+    final hints = isClassique
+        ? [
+            l.beloteClassiqueHint1,
+            l.beloteClassiqueHint2,
+            l.beloteClassiqueHint3,
+            l.beloteClassiqueHint4,
+            l.beloteClassiqueHint5,
+            l.beloteClassiqueHint6,
+          ]
+        : [
+            l.beloteCoincheHint1,
+            l.beloteCoincheHint2,
+            l.beloteCoincheHint3,
+            l.beloteCoincheHint4,
+            l.beloteCoincheHint5,
+            l.beloteCoincheHint6,
+          ];
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -176,27 +192,48 @@ class _RuleHintCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: hints
-            .map(
-              (h) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('• ', style: TextStyle(color: scheme.onSurfaceVariant)),
-                    Expanded(
-                      child: Text(
-                        h,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  intro,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            )
-            .toList(),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...hints.map(
+            (h) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('• ', style: TextStyle(color: scheme.onSurfaceVariant)),
+                  Expanded(
+                    child: Text(
+                      h,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
