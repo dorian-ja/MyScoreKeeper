@@ -15,6 +15,9 @@ import 'screens/tichu/tichu_scoreboard_screen.dart';
 import 'screens/dame_de_pique/ddp_setup_screen.dart';
 import 'screens/dame_de_pique/ddp_round_screen.dart';
 import 'screens/dame_de_pique/ddp_scoreboard_screen.dart';
+import 'screens/belote/belote_setup_screen.dart';
+import 'screens/belote/belote_round_screen.dart';
+import 'screens/belote/belote_scoreboard_screen.dart';
 import 'screens/palet/palet_setup_screen.dart';
 import 'screens/palet/palet_round_screen.dart';
 import 'screens/palet/palet_scoreboard_screen.dart';
@@ -74,6 +77,20 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/dame-de-pique/scoreboard',
       builder: (_, __) => const DdpScoreboardScreen(),
+    ),
+
+    // Belote (+ Coinche)
+    GoRoute(
+      path: '/belote/setup',
+      builder: (_, __) => const BeloteSetupScreen(),
+    ),
+    GoRoute(
+      path: '/belote/round',
+      builder: (_, __) => const BeloteRoundScreen(),
+    ),
+    GoRoute(
+      path: '/belote/scoreboard',
+      builder: (_, __) => const BeloteScoreboardScreen(),
     ),
 
     // Palet

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../l10n/app_localizations.dart';
+import '../models/belote_state.dart';
 import '../models/dame_de_pique_state.dart';
 import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
@@ -10,6 +11,7 @@ import '../models/molkky_state.dart';
 import '../models/palet_state.dart';
 import '../models/skull_king_state.dart';
 import '../models/tichu_state.dart';
+import '../providers/belote_provider.dart';
 import '../providers/dame_de_pique_provider.dart';
 import '../providers/generic_provider.dart';
 import '../providers/molkky_provider.dart';
@@ -77,6 +79,26 @@ class HomeScreen extends ConsumerWidget {
               ? '/dame-de-pique/round'
               : '/dame-de-pique/scoreboard',
           discard: () => ref.read(dameDepiqueProvider.notifier).reset(),
+        ),
+      );
+    }
+
+    final belote = ref.watch(beloteProvider);
+    if (belote.phase != BelotePhase.setup) {
+      result.add(
+        _ResumeInfo(
+          type: GameType.belote,
+          detail: belote.phase == BelotePhase.finished
+              ? l.gameFinishedUnsaved
+              : l.beloteResumeDetail(
+                  belote.currentRound,
+                  belote.teamATotal,
+                  belote.teamBTotal,
+                ),
+          route: belote.phase == BelotePhase.round
+              ? '/belote/round'
+              : '/belote/scoreboard',
+          discard: () => ref.read(beloteProvider.notifier).reset(),
         ),
       );
     }
@@ -195,6 +217,8 @@ class HomeScreen extends ConsumerWidget {
                     _GameCard(game: GameType.tichu),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.dameDepique),
+                    const SizedBox(height: 12),
+                    _GameCard(game: GameType.belote),
                     const SizedBox(height: 12),
                     _GameCard(game: GameType.palet),
                     const SizedBox(height: 12),
@@ -354,6 +378,8 @@ class _GameCard extends StatelessWidget {
         return '/tichu/setup';
       case GameType.dameDepique:
         return '/dame-de-pique/setup';
+      case GameType.belote:
+        return '/belote/setup';
       case GameType.palet:
         return '/palet/setup';
       case GameType.molkky:

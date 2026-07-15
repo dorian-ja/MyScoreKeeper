@@ -4,6 +4,7 @@ enum GameType {
   skullKing,
   tichu,
   dameDepique,
+  belote,
   palet,
   molkky,
   autre;
@@ -19,6 +20,8 @@ enum GameType {
         return const Color(0xFF9C4A1E); // orange brûlé du dragon
       case GameType.dameDepique:
         return const Color(0xFF2B2118); // encre/noir de la dame de pique
+      case GameType.belote:
+        return const Color(0xFF7A2E3A); // bordeaux du tapis / des cartes
       case GameType.palet:
         return const Color(0xFF8C6B4A); // terre battue / sable du terrain
       case GameType.molkky:
@@ -36,6 +39,8 @@ enum GameType {
         return 'assets/images/game_tichu.png';
       case GameType.dameDepique:
         return 'assets/images/game_dame_de_pique.png';
+      case GameType.belote:
+        return 'assets/images/game_belote.png';
       case GameType.palet:
         return 'assets/images/game_palet.png';
       case GameType.molkky:
