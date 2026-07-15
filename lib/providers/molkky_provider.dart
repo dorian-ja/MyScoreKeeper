@@ -60,12 +60,12 @@ class MolkkyNotifier extends StateNotifier<MolkkyGameState> {
   void startGame(
     List<List<String>> teams,
     int targetScore,
-    bool eliminationEnabled,
+    MolkkyMissRule missRule,
   ) {
     state = MolkkyGameState(
       teams: teams,
       targetScore: targetScore,
-      eliminationEnabled: eliminationEnabled,
+      missRule: missRule,
       phase: MolkkyPhase.playing,
       throws: const [],
       currentTeam: 0,
