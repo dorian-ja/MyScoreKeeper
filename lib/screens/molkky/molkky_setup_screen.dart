@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/game_type.dart';
+import '../../models/molkky_state.dart';
 import '../../providers/molkky_provider.dart';
 import '../../providers/roster_provider.dart';
 import '../../services/player_names_store.dart';
@@ -25,7 +26,7 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
 
   int _teamCount = 2;
   int _teamSize = 2;
-  bool _elimination = true;
+  MolkkyMissRule _missRule = MolkkyMissRule.elimination;
 
   // Contrôleurs préalloués au max, indexés par [équipe * maxSize + joueur],
   // stables quand le nombre d'équipes ou leur taille change (pas de perte
@@ -46,6 +47,20 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
   }
 
   int _ctrlIndex(int team, int player) => team * _maxTeamSize + player;
+
+  String _missRuleLabel(AppLocalizations l, MolkkyMissRule rule) =>
+      switch (rule) {
+        MolkkyMissRule.none => l.molkkyRuleNone,
+        MolkkyMissRule.elimination => l.molkkyRuleElimination,
+        MolkkyMissRule.reset => l.molkkyRuleReset,
+      };
+
+  String _missRuleDesc(AppLocalizations l, MolkkyMissRule rule) =>
+      switch (rule) {
+        MolkkyMissRule.none => l.molkkyRuleNoneDesc,
+        MolkkyMissRule.elimination => l.molkkyRuleEliminationDesc,
+        MolkkyMissRule.reset => l.molkkyRuleResetDesc,
+      };
 
   void _startGame() {
     final l = AppLocalizations.of(context);
@@ -73,7 +88,7 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
     final target = int.tryParse(_targetCtrl.text) ?? 50;
     ref
         .read(molkkyProvider.notifier)
-        .startGame(teams, target <= 0 ? 50 : target, _elimination);
+        .startGame(teams, target <= 0 ? 50 : target, _missRule);
     context.go('/molkky/play');
   }
 
@@ -151,11 +166,28 @@ class _MolkkySetupScreenState extends ConsumerState<MolkkySetupScreen> {
               const SizedBox(height: 12),
             ],
             Card(
-              child: SwitchListTile(
-                title: Text(l.molkkyEliminationRule),
-                subtitle: Text(l.molkkyEliminationDesc),
-                value: _elimination,
-                onChanged: (v) => setState(() => _elimination = v),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.molkkyMissRuleTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    for (final rule in MolkkyMissRule.values)
+                      RadioListTile<MolkkyMissRule>(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_missRuleLabel(l, rule)),
+                        subtitle: Text(_missRuleDesc(l, rule)),
+                        value: rule,
+                        // ignore: deprecated_member_use
+                        groupValue: _missRule,
+                        // ignore: deprecated_member_use
+                        onChanged: (v) => setState(() => _missRule = v!),
+                      ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),

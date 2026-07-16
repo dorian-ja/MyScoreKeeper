@@ -16,6 +16,7 @@ class MolkkyPlayScreen extends ConsumerWidget {
     final before = ref.read(molkkyProvider);
     final team = before.currentTeam;
     final scoreBefore = before.scoreOf(team);
+    final missesBefore = before.consecutiveMissesOf(team);
 
     ref.read(molkkyProvider.notifier).recordThrow(points);
     final after = ref.read(molkkyProvider);
@@ -25,10 +26,16 @@ class MolkkyPlayScreen extends ConsumerWidget {
       return;
     }
 
+    final hitStreakLimit =
+        points == 0 && missesBefore + 1 >= before.missStrikeLimit;
     final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
     if (after.isEliminated(team)) {
       messenger.showSnackBar(
         SnackBar(content: Text(l.molkkyEliminated(before.teamLabel(team)))),
+      );
+    } else if (before.missRule == MolkkyMissRule.reset && hitStreakLimit) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.molkkyReset(before.teamLabel(team)))),
       );
     } else if (scoreBefore + points > after.targetScore) {
       messenger.showSnackBar(
@@ -201,7 +208,7 @@ class _TeamStandingRow extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   )
-                else if (state.eliminationEnabled)
+                else if (state.missRuleActive)
                   _MissDots(
                     misses: state.consecutiveMissesOf(team),
                     limit: state.missStrikeLimit,

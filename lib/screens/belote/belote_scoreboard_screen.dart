@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/palet_state.dart';
-import '../../providers/palet_provider.dart';
+import '../../models/belote_state.dart';
+import '../../providers/belote_provider.dart';
 import '../../theme.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/scoreboard_actions.dart';
 import '../../widgets/winner_banner.dart';
 
-class PaletScoreboardScreen extends ConsumerWidget {
-  const PaletScoreboardScreen({super.key});
+class BeloteScoreboardScreen extends ConsumerWidget {
+  const BeloteScoreboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final state = ref.watch(paletProvider);
-    if (state.phase == PaletPhase.setup) return const RedirectHome();
+    final state = ref.watch(beloteProvider);
+    if (state.phase == BelotePhase.setup) return const RedirectHome();
 
-    final isFinished = state.phase == PaletPhase.finished;
+    final isFinished = state.phase == BelotePhase.finished;
     final isDraw = state.teamATotal == state.teamBTotal;
     final aWins = state.teamATotal >= state.teamBTotal;
     final winner = aWins ? state.teamALabel : state.teamBLabel;
@@ -28,11 +28,11 @@ class PaletScoreboardScreen extends ConsumerWidget {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isFinished ? l.paletFinishedTitle : l.paletScoresTitle),
+          title: Text(isFinished ? l.beloteFinishedTitle : l.beloteScoresTitle),
           automaticallyImplyLeading: false,
           leading: QuitGameButton(
             onConfirm: () {
-              ref.read(paletProvider.notifier).reset();
+              ref.read(beloteProvider.notifier).reset();
               context.go('/');
             },
           ),
@@ -64,17 +64,16 @@ class PaletScoreboardScreen extends ConsumerWidget {
                   isFinished: isFinished,
                   canUndo: state.completedRounds.isNotEmpty,
                   onNextRound: () {
-                    ref.read(paletProvider.notifier).nextRound();
-                    context.go('/palet/round');
+                    ref.read(beloteProvider.notifier).nextRound();
+                    context.go('/belote/round');
                   },
                   onUndoRound: () {
-                    ref.read(paletProvider.notifier).undoLastRound();
-                    context.go('/palet/round');
+                    ref.read(beloteProvider.notifier).undoLastRound();
+                    context.go('/belote/round');
                   },
-                  onSave: () =>
-                      ref.read(paletProvider.notifier).saveToHistory(),
+                  onSave: () => ref.read(beloteProvider.notifier).saveToHistory(),
                   onHome: () {
-                    ref.read(paletProvider.notifier).reset();
+                    ref.read(beloteProvider.notifier).reset();
                     context.go('/');
                   },
                   shareTextBuilder: () {
@@ -82,9 +81,9 @@ class PaletScoreboardScreen extends ConsumerWidget {
                       (name: state.teamALabel, score: state.teamATotal),
                       (name: state.teamBLabel, score: state.teamBTotal),
                     ]..sort((a, b) => b.score.compareTo(a.score));
-                    return buildShareText(l, l.gamePalet, teams);
+                    return buildShareText(l, l.gameBelote, teams);
                   },
-                  shareGameName: l.gamePalet,
+                  shareGameName: l.gameBelote,
                   rankingBuilder: () => [
                     (name: state.teamALabel, score: state.teamATotal),
                     (name: state.teamBLabel, score: state.teamBTotal),
@@ -100,7 +99,7 @@ class PaletScoreboardScreen extends ConsumerWidget {
 }
 
 class _TeamScoreCard extends StatelessWidget {
-  final PaletGameState state;
+  final BeloteGameState state;
   const _TeamScoreCard({required this.state});
 
   @override
@@ -191,7 +190,7 @@ class _TeamScore extends StatelessWidget {
 }
 
 class _RoundHistoryCard extends StatelessWidget {
-  final PaletGameState state;
+  final BeloteGameState state;
   const _RoundHistoryCard({required this.state});
 
   @override
@@ -212,6 +211,11 @@ class _RoundHistoryCard extends StatelessWidget {
             ...state.completedRounds.asMap().entries.map((e) {
               final i = e.key;
               final r = e.value;
+              final aScore = state.roundTeamAScore(r);
+              final bScore = state.roundTeamBScore(r);
+              final preneur = r.takingTeam == BeloteTeam.teamA
+                  ? state.teamALabel
+                  : state.teamBLabel;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
@@ -223,9 +227,15 @@ class _RoundHistoryCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
-                    const Spacer(),
+                    Expanded(
+                      child: Text(
+                        l.belotePreneurShort(preneur),
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     Text(
-                      '+${r.teamAPoints}',
+                      '$aScore',
                       style: const TextStyle(
                         color: teamAColor,
                         fontWeight: FontWeight.bold,
@@ -234,7 +244,7 @@ class _RoundHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '+${r.teamBPoints}',
+                      '$bScore',
                       style: const TextStyle(
                         color: teamBColor,
                         fontWeight: FontWeight.bold,

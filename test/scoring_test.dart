@@ -231,7 +231,7 @@ void main() {
     MolkkyGameState withThrows(
       List<(int, int)> tt, {
       int targetScore = 50,
-      bool elimination = true,
+      MolkkyMissRule missRule = MolkkyMissRule.elimination,
       List<List<String>> teams = const [
         ['A'],
         ['B'],
@@ -239,7 +239,7 @@ void main() {
     }) => MolkkyGameState(
       teams: teams,
       targetScore: targetScore,
-      eliminationEnabled: elimination,
+      missRule: missRule,
       phase: MolkkyPhase.playing,
       throws: [
         for (final (team, pts) in tt)
@@ -282,8 +282,23 @@ void main() {
       expect(s.isEliminated(0), false);
     });
 
-    test('élimination désactivée : aucune équipe éliminée', () {
-      final s = withThrows([(0, 0), (0, 0), (0, 0)], elimination: false);
+    test('aucune sanction : aucune équipe éliminée', () {
+      final s = withThrows(
+        [(0, 0), (0, 0), (0, 0)],
+        missRule: MolkkyMissRule.none,
+      );
+      expect(s.isEliminated(0), false);
+      expect(s.winningTeam, null);
+    });
+
+    test('remise à 0 : 3 ratés annulent le score et repartent d\'une série vierge', () {
+      // A marque 20, puis rate 3 fois → score remis à 0, compteur remis à 0
+      final s = withThrows(
+        [(0, 12), (0, 8), (0, 0), (0, 0), (0, 0)],
+        missRule: MolkkyMissRule.reset,
+      );
+      expect(s.scoreOf(0), 0);
+      expect(s.consecutiveMissesOf(0), 0);
       expect(s.isEliminated(0), false);
       expect(s.winningTeam, null);
     });
@@ -308,7 +323,7 @@ void main() {
       final restored = MolkkyGameState.fromJson(state.toJson());
       expect(restored.teams, state.teams);
       expect(restored.targetScore, 50);
-      expect(restored.eliminationEnabled, true);
+      expect(restored.missRule, MolkkyMissRule.elimination);
       expect(restored.phase, MolkkyPhase.playing);
       expect(restored.scoreOf(0), state.scoreOf(0));
       expect(restored.throws.length, 3);

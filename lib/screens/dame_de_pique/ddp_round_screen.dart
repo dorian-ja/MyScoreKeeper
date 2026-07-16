@@ -47,9 +47,13 @@ class _DdpRoundScreenState extends ConsumerState<DdpRoundScreen> {
           p: (_hearts[p] ?? 0) + (p == _queenHolder ? 13 : 0),
       };
     }
-    ref
-        .read(dameDepiqueProvider.notifier)
-        .submitRound(DdpRoundData(penalties: penalties));
+    ref.read(dameDepiqueProvider.notifier).submitRound(
+      DdpRoundData(
+        penalties: penalties,
+        queenHolder: _moonShooter == null ? _queenHolder : null,
+        moonShooter: _moonShooter,
+      ),
+    );
     context.go('/dame-de-pique/scoreboard');
   }
 

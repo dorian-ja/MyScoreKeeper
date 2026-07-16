@@ -20,6 +20,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
     if (state.phase == TichuPhase.setup) return const RedirectHome();
 
     final isFinished = state.phase == TichuPhase.finished;
+    final isDraw = state.teamATotal == state.teamBTotal;
     final aWins = state.teamATotal >= state.teamBTotal;
     final winner = aWins ? state.teamALabel : state.teamBLabel;
 
@@ -46,7 +47,11 @@ class TichuScoreboardScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (isFinished) ...[
-                      WinnerBanner(winner: winner, label: l.winner),
+                      WinnerBanner(
+                        winner: winner,
+                        label: isDraw ? l.tie : l.winner,
+                        isDraw: isDraw,
+                      ),
                       const SizedBox(height: 16),
                     ],
                     _TeamScoreCard(state: state),

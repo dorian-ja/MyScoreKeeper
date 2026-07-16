@@ -11,8 +11,13 @@ final historyProvider =
 class HistoryNotifier extends StateNotifier<List<GameHistoryEntry>> {
   static const _key = 'game_history';
 
+  /// Chargement initial de l'historique. Toute mutation doit l'attendre pour
+  /// éviter d'écraser un ajout fait avant la fin du chargement (race condition
+  /// où une partie sauvegardée disparaissait de l'historique).
+  late final Future<void> _ready;
+
   HistoryNotifier() : super([]) {
-    _load();
+    _ready = _load();
   }
 
   Future<void> _load() async {
@@ -36,17 +41,20 @@ class HistoryNotifier extends StateNotifier<List<GameHistoryEntry>> {
   }
 
   Future<void> addEntry(GameHistoryEntry entry) async {
+    await _ready;
     state = [entry, ...state];
     await _save();
   }
 
   Future<void> deleteEntry(String id) async {
+    await _ready;
     state = state.where((e) => e.id != id).toList();
     await _save();
   }
 
   /// Efface tout l'historique.
   Future<void> clearAll() async {
+    await _ready;
     state = [];
     await _save();
   }
@@ -58,6 +66,7 @@ class HistoryNotifier extends StateNotifier<List<GameHistoryEntry>> {
   /// Fusionne des entrées importées, en ignorant celles dont l'id existe déjà.
   /// Renvoie le nombre d'entrées réellement ajoutées.
   Future<int> importEntries(List<GameHistoryEntry> entries) async {
+    await _ready;
     final existingIds = state.map((e) => e.id).toSet();
     final toAdd = entries.where((e) => !existingIds.contains(e.id)).toList();
     if (toAdd.isEmpty) return 0;

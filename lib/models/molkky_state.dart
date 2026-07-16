@@ -2,6 +2,10 @@ import 'package:flutter/foundation.dart';
 
 enum MolkkyPhase { setup, playing, finished }
 
+/// Sanction appliquée à une équipe qui rate [MolkkyGameState.missStrikeLimit]
+/// lancers d'affilée : aucune, élimination définitive, ou remise du score à 0.
+enum MolkkyMissRule { none, elimination, reset }
+
 /// Un lancer : l'équipe qui joue, le joueur (index dans l'équipe) et le score
 /// obtenu (0 = raté, 1–12). Le score de chaque équipe se recalcule en rejouant
 /// la séquence de lancers, ce qui rend l'annulation triviale.
@@ -35,7 +39,7 @@ class MolkkyGameState {
   /// Chaque équipe est la liste ordonnée des noms de ses joueurs.
   final List<List<String>> teams;
   final int targetScore;
-  final bool eliminationEnabled;
+  final MolkkyMissRule missRule;
   final int missStrikeLimit;
   final MolkkyPhase phase;
   final List<MolkkyThrow> throws;
@@ -44,12 +48,15 @@ class MolkkyGameState {
   const MolkkyGameState({
     this.teams = const [],
     this.targetScore = 50,
-    this.eliminationEnabled = true,
+    this.missRule = MolkkyMissRule.elimination,
     this.missStrikeLimit = 3,
     this.phase = MolkkyPhase.setup,
     this.throws = const [],
     this.currentTeam = 0,
   });
+
+  /// La règle des 3 ratés a-t-elle un effet (dots à afficher, messages) ?
+  bool get missRuleActive => missRule != MolkkyMissRule.none;
 
   /// Score de repli en cas de dépassement (moitié de la cible : 25 pour 50).
   int get overshootReset => targetScore ~/ 2;
@@ -57,36 +64,42 @@ class MolkkyGameState {
   List<MolkkyThrow> throwsOf(int team) =>
       throws.where((t) => t.teamIndex == team).toList();
 
-  /// Rejoue la séquence de lancers de l'équipe : chaque lancer s'additionne,
-  /// mais tout dépassement de la cible ramène le total au score de repli.
-  int scoreOf(int team) {
+  /// Rejoue la séquence de lancers de l'équipe et renvoie son score courant
+  /// ainsi que sa série de ratés en cours. Chaque lancer s'additionne, tout
+  /// dépassement de la cible ramène au score de repli, et — en mode
+  /// [MolkkyMissRule.reset] — atteindre [missStrikeLimit] ratés d'affilée
+  /// remet le total à 0 et repart d'une série vierge.
+  ({int score, int streak}) _replay(int team) {
     var total = 0;
+    var streak = 0;
     for (final t in throws) {
       if (t.teamIndex != team) continue;
-      total += t.points;
-      if (total > targetScore) total = overshootReset;
+      if (t.points == 0) {
+        streak++;
+        if (missRule == MolkkyMissRule.reset && streak >= missStrikeLimit) {
+          total = 0;
+          streak = 0;
+        }
+      } else {
+        total += t.points;
+        if (total > targetScore) total = overshootReset;
+        streak = 0;
+      }
     }
-    return total;
+    return (score: total, streak: streak);
   }
+
+  int scoreOf(int team) => _replay(team).score;
 
   bool hasWon(int team) => scoreOf(team) == targetScore;
 
-  /// Nombre de lancers ratés (0) consécutifs les plus récents de l'équipe.
-  int consecutiveMissesOf(int team) {
-    var count = 0;
-    for (final t in throws.reversed) {
-      if (t.teamIndex != team) continue;
-      if (t.points == 0) {
-        count++;
-      } else {
-        break;
-      }
-    }
-    return count;
-  }
+  /// Nombre de lancers ratés (0) consécutifs en cours de l'équipe (remis à zéro
+  /// après une remise à 0 en mode [MolkkyMissRule.reset]).
+  int consecutiveMissesOf(int team) => _replay(team).streak;
 
   bool isEliminated(int team) =>
-      eliminationEnabled && consecutiveMissesOf(team) >= missStrikeLimit;
+      missRule == MolkkyMissRule.elimination &&
+      _replay(team).streak >= missStrikeLimit;
 
   /// Index du prochain lanceur de l'équipe active (rotation au sein de l'équipe).
   int get currentThrowerIndex {
@@ -112,7 +125,7 @@ class MolkkyGameState {
     for (var i = 0; i < teams.length; i++) {
       if (hasWon(i)) return i;
     }
-    if (eliminationEnabled && teams.length >= 2) {
+    if (missRule == MolkkyMissRule.elimination && teams.length >= 2) {
       final alive = [
         for (var i = 0; i < teams.length; i++)
           if (!isEliminated(i)) i,
@@ -158,19 +171,31 @@ class MolkkyGameState {
   Map<String, dynamic> toJson() => {
     'teams': teams,
     'targetScore': targetScore,
-    'eliminationEnabled': eliminationEnabled,
+    'missRule': missRule.name,
     'missStrikeLimit': missStrikeLimit,
     'phase': phase.name,
     'throws': throws.map((t) => t.toJson()).toList(),
     'currentTeam': currentTeam,
   };
 
+  /// Lit la règle des ratés, en tolérant les anciennes sauvegardes qui ne
+  /// stockaient qu'un booléen `eliminationEnabled`.
+  static MolkkyMissRule _missRuleFromJson(Map<String, dynamic> j) {
+    final raw = j['missRule'];
+    if (raw is String) return MolkkyMissRule.values.byName(raw);
+    final legacy = j['eliminationEnabled'];
+    if (legacy is bool) {
+      return legacy ? MolkkyMissRule.elimination : MolkkyMissRule.none;
+    }
+    return MolkkyMissRule.elimination;
+  }
+
   factory MolkkyGameState.fromJson(Map<String, dynamic> j) => MolkkyGameState(
     teams: (j['teams'] as List)
         .map((t) => List<String>.from(t as List))
         .toList(),
     targetScore: j['targetScore'] as int,
-    eliminationEnabled: j['eliminationEnabled'] as bool,
+    missRule: _missRuleFromJson(j),
     missStrikeLimit: j['missStrikeLimit'] as int,
     phase: MolkkyPhase.values.byName(j['phase'] as String),
     throws: (j['throws'] as List)
@@ -182,7 +207,7 @@ class MolkkyGameState {
   MolkkyGameState copyWith({
     List<List<String>>? teams,
     int? targetScore,
-    bool? eliminationEnabled,
+    MolkkyMissRule? missRule,
     int? missStrikeLimit,
     MolkkyPhase? phase,
     List<MolkkyThrow>? throws,
@@ -190,7 +215,7 @@ class MolkkyGameState {
   }) => MolkkyGameState(
     teams: teams ?? this.teams,
     targetScore: targetScore ?? this.targetScore,
-    eliminationEnabled: eliminationEnabled ?? this.eliminationEnabled,
+    missRule: missRule ?? this.missRule,
     missStrikeLimit: missStrikeLimit ?? this.missStrikeLimit,
     phase: phase ?? this.phase,
     throws: throws ?? this.throws,

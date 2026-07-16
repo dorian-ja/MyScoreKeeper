@@ -60,12 +60,12 @@ class MolkkyNotifier extends StateNotifier<MolkkyGameState> {
   void startGame(
     List<List<String>> teams,
     int targetScore,
-    bool eliminationEnabled,
+    MolkkyMissRule missRule,
   ) {
     state = MolkkyGameState(
       teams: teams,
       targetScore: targetScore,
-      eliminationEnabled: eliminationEnabled,
+      missRule: missRule,
       phase: MolkkyPhase.playing,
       throws: const [],
       currentTeam: 0,
@@ -124,9 +124,39 @@ class MolkkyNotifier extends StateNotifier<MolkkyGameState> {
       ],
       winner: state.teamLabel(winnerTeam),
       finalScores: finalScores,
-      rounds: const [],
+      rounds: _buildRounds(),
     );
     await _ref.read(historyProvider.notifier).addEntry(entry);
+  }
+
+  /// Découpe la séquence de lancers en « manches » (tours de table) pour
+  /// l'historique. Une manche regroupe un lancer de chaque équipe encore en
+  /// lice ; on en démarre une nouvelle dès qu'une équipe rejoue. Chaque lancer
+  /// est enregistré avec l'équipe, le joueur, les points et le score cumulé de
+  /// l'équipe juste après (rejoué depuis le début pour respecter dépassements
+  /// et remises à 0).
+  List<Map<String, dynamic>> _buildRounds() {
+    final rounds = <Map<String, dynamic>>[];
+    var lap = <Map<String, dynamic>>[];
+    final seen = <int>{};
+    for (var i = 0; i < state.throws.length; i++) {
+      final t = state.throws[i];
+      if (seen.contains(t.teamIndex)) {
+        rounds.add({'throws': lap});
+        lap = [];
+        seen.clear();
+      }
+      seen.add(t.teamIndex);
+      final upTo = state.copyWith(throws: state.throws.sublist(0, i + 1));
+      lap.add({
+        'team': state.teamLabel(t.teamIndex),
+        'player': state.teams[t.teamIndex][t.playerIndex],
+        'points': t.points,
+        'total': upTo.scoreOf(t.teamIndex),
+      });
+    }
+    if (lap.isNotEmpty) rounds.add({'throws': lap});
+    return rounds;
   }
 
   void reset() {

@@ -1,24 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../models/tichu_state.dart';
+import '../models/belote_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../services/game_persistence.dart';
 import 'history_provider.dart';
 
-final tichuProvider = StateNotifierProvider<TichuNotifier, TichuGameState>((
-  ref,
-) {
-  return TichuNotifier(ref);
-});
+final beloteProvider =
+    StateNotifierProvider<BeloteNotifier, BeloteGameState>((ref) {
+      return BeloteNotifier(ref);
+    });
 
-class TichuNotifier extends StateNotifier<TichuGameState> {
+class BeloteNotifier extends StateNotifier<BeloteGameState> {
   final Ref _ref;
   static const _uuid = Uuid();
-  static const persistKey = 'current_game_tichu';
+  static const persistKey = 'current_game_belote';
 
-  TichuNotifier(this._ref) : super(const TichuGameState()) {
+  BeloteNotifier(this._ref) : super(const BeloteGameState()) {
     _restore();
   }
 
@@ -26,8 +25,8 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
     final json = await GamePersistence.load(persistKey);
     if (json == null) return;
     try {
-      final restored = TichuGameState.fromJson(json);
-      if (restored.phase != TichuPhase.setup && mounted) {
+      final restored = BeloteGameState.fromJson(json);
+      if (restored.phase != BelotePhase.setup && mounted) {
         state = restored;
         _enableWakelock();
       }
@@ -37,7 +36,7 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
   }
 
   Future<void> _persist() async {
-    if (state.phase == TichuPhase.setup) {
+    if (state.phase == BelotePhase.setup) {
       await GamePersistence.clear(persistKey);
     } else {
       await GamePersistence.save(persistKey, state.toJson());
@@ -56,40 +55,43 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
     } catch (_) {}
   }
 
-  void startGame(List<String> players, int targetScore, TichuMode mode) {
-    state = TichuGameState(
+  void startGame(
+    List<String> players,
+    int targetScore,
+    BeloteMode mode,
+  ) {
+    state = BeloteGameState(
       players: players,
       targetScore: targetScore,
-      phase: TichuPhase.round,
+      phase: BelotePhase.round,
+      mode: mode,
       completedRounds: [],
       currentRound: 1,
-      mode: mode,
     );
     _enableWakelock();
     _persist();
   }
 
-  void submitRound(TichuRoundData roundData) {
+  void submitRound(BeloteRoundData roundData) {
     final newRounds = [...state.completedRounds, roundData];
-    // Utilise les méthodes de TichuGameState pour éviter la duplication de logique
     final tempState = state.copyWith(completedRounds: newRounds);
     final finished =
         tempState.teamATotal >= state.targetScore ||
         tempState.teamBTotal >= state.targetScore;
     state = state.copyWith(
       completedRounds: newRounds,
-      phase: finished ? TichuPhase.finished : TichuPhase.scoreboard,
+      phase: finished ? BelotePhase.finished : BelotePhase.scoreboard,
       currentRound: state.currentRound + 1,
     );
     _persist();
   }
 
   void nextRound() {
-    state = state.copyWith(phase: TichuPhase.round);
+    state = state.copyWith(phase: BelotePhase.round);
     _persist();
   }
 
-  /// Annule la dernière manche : elle devra être resaisie entièrement.
+  /// Annule la dernière donne : elle devra être resaisie entièrement.
   void undoLastRound() {
     if (state.completedRounds.isEmpty) return;
     state = state.copyWith(
@@ -98,7 +100,7 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
         state.completedRounds.length - 1,
       ),
       currentRound: state.currentRound - 1,
-      phase: TichuPhase.round,
+      phase: BelotePhase.round,
     );
     _persist();
   }
@@ -110,17 +112,18 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
     final bTotal = state.teamBTotal;
     final entry = GameHistoryEntry(
       id: _uuid.v4(),
-      gameType: GameType.tichu,
+      gameType: GameType.belote,
       playedAt: DateTime.now(),
       playerOrTeamNames: [teamA, teamB],
       winner: aTotal >= bTotal ? teamA : teamB,
       finalScores: {teamA: aTotal, teamB: bTotal},
-      // Points marqués par équipe à chaque manche (annonces incluses), figés
-      // pour l'historique.
+      // Points marqués par équipe à chaque donne + le mode (le calcul en dépend),
+      // figés pour que l'historique reste lisible sans recalcul.
       rounds: state.completedRounds.map((r) {
         final j = r.toJson();
         j['teamAScore'] = state.roundTeamAScore(r);
         j['teamBScore'] = state.roundTeamBScore(r);
+        j['mode'] = state.mode.name;
         return j;
       }).toList(),
     );
@@ -128,7 +131,7 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
   }
 
   void reset() {
-    state = const TichuGameState();
+    state = const BeloteGameState();
     _disableWakelock();
     GamePersistence.clear(persistKey);
   }

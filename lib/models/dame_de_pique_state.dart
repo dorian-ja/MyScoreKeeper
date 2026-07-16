@@ -6,12 +6,44 @@ enum DdpPhase { setup, round, scoreboard, finished }
 class DdpRoundData {
   final Map<String, int> penalties; // player -> penalty points this round
 
-  const DdpRoundData({required this.penalties});
+  /// Joueur ayant ramassé la dame de pique (marqué « * »). Nul lors d'un
+  /// grand chelem, où c'est [moonShooter] qui est renseigné.
+  final String? queenHolder;
 
-  Map<String, dynamic> toJson() => {'penalties': penalties};
+  /// Joueur ayant réalisé un grand chelem / ramassage général (marqué « GC »).
+  final String? moonShooter;
 
-  factory DdpRoundData.fromJson(Map<String, dynamic> j) =>
-      DdpRoundData(penalties: Map<String, int>.from(j['penalties'] as Map));
+  const DdpRoundData({
+    required this.penalties,
+    this.queenHolder,
+    this.moonShooter,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'penalties': penalties,
+    if (queenHolder != null) 'queenHolder': queenHolder,
+    if (moonShooter != null) 'moonShooter': moonShooter,
+  };
+
+  factory DdpRoundData.fromJson(Map<String, dynamic> j) => DdpRoundData(
+    penalties: Map<String, int>.from(j['penalties'] as Map),
+    queenHolder: j['queenHolder'] as String?,
+    moonShooter: j['moonShooter'] as String?,
+  );
+}
+
+/// Marqueurs à accoler aux scores d'une manche : « GC » (grand chelem) pour le
+/// [moonShooter], sinon « * » pour le [queenHolder]. Les libellés sont passés
+/// pour rester indépendant de la localisation.
+Map<String, String> ddpRoundMarks({
+  String? queenHolder,
+  String? moonShooter,
+  required String queenMark,
+  required String slamMark,
+}) {
+  if (moonShooter != null) return {moonShooter: slamMark};
+  if (queenHolder != null) return {queenHolder: queenMark};
+  return const {};
 }
 
 @immutable
