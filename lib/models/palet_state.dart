@@ -35,7 +35,7 @@ class PaletGameState {
   const PaletGameState({
     this.players = const [],
     this.teamSize = 2,
-    this.targetScore = 500,
+    this.targetScore = 12,
     this.mode = PaletMode.breton,
     this.phase = PaletPhase.setup,
     this.completedRounds = const [],
