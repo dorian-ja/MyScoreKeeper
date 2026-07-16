@@ -23,4 +23,17 @@ extension GameTypeL10n on GameType {
     GameType.molkky => l.subtitleMolkky,
     GameType.autre => l.subtitleAutre,
   };
+
+  /// Explication de la façon dont MyScoreKeeper compte les points pour ce jeu.
+  /// Renvoie une chaîne vide pour les jeux pas encore documentés (le bouton
+  /// d'info n'est alors pas affiché).
+  String scoringExplanation(AppLocalizations l) => switch (this) {
+    GameType.skullKing => l.scoringSkullKing,
+    GameType.belote => l.scoringBelote,
+    GameType.tichu => '',
+    GameType.dameDepique => '',
+    GameType.palet => '',
+    GameType.molkky => '',
+    GameType.autre => '',
+  };
 }
