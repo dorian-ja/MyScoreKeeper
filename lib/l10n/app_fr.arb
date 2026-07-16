@@ -349,6 +349,8 @@
   "@tichuCardPointsSummary": { "placeholders": { "a": { "type": "int" }, "b": { "type": "int" } } },
   "paletRoundSummary": "Éq. A: {a} pts  Éq. B: {b} pts",
   "@paletRoundSummary": { "placeholders": { "a": { "type": "int" }, "b": { "type": "int" } } },
+  "expandAllRounds": "Tout déplier",
+  "collapseAllRounds": "Tout replier",
   "roundPointsWon": "Points de la manche",
   "roundNoDetail": "Aucun détail enregistré pour cette manche.",
   "tichuTichu": "Tichu",

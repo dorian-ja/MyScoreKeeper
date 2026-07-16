@@ -292,6 +292,8 @@
   "tichuDoubleVictorySummary": "Double victory: {name}",
   "tichuCardPointsSummary": "Card points — Team A: {a} / Team B: {b}",
   "paletRoundSummary": "Team A: {a} pts  Team B: {b} pts",
+  "expandAllRounds": "Expand all",
+  "collapseAllRounds": "Collapse all",
   "roundPointsWon": "Round points",
   "roundNoDetail": "No detail recorded for this round.",
   "tichuTichu": "Tichu",

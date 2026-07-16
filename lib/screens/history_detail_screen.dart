@@ -11,9 +11,18 @@ import '../theme.dart';
 import '../widgets/game_share.dart';
 import '../widgets/score_evolution_chart.dart';
 
-class HistoryDetailScreen extends ConsumerWidget {
+class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String id;
   const HistoryDetailScreen({super.key, required this.id});
+
+  @override
+  ConsumerState<HistoryDetailScreen> createState() =>
+      _HistoryDetailScreenState();
+}
+
+class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
+  /// Force l'ouverture/fermeture simultanée de toutes les manches.
+  bool _allExpanded = false;
 
   String _formatDate(DateTime dt, AppLocalizations l) {
     final day = dt.day.toString().padLeft(2, '0');
@@ -44,10 +53,10 @@ class HistoryDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final history = ref.watch(historyProvider);
-    final entry = history.where((e) => e.id == id).firstOrNull;
+    final entry = history.where((e) => e.id == widget.id).firstOrNull;
 
     if (entry == null) {
       return Scaffold(
@@ -84,6 +93,15 @@ class HistoryDetailScreen extends ConsumerWidget {
         appBar: AppBar(
           title: Text(entry.gameType.label(l)),
           actions: [
+            if (entry.rounds.isNotEmpty)
+              IconButton(
+                icon: Icon(
+                  _allExpanded ? Icons.unfold_less : Icons.unfold_more,
+                ),
+                tooltip: _allExpanded ? l.collapseAllRounds : l.expandAllRounds,
+                onPressed: () =>
+                    setState(() => _allExpanded = !_allExpanded),
+              ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: l.share,
@@ -198,7 +216,12 @@ class HistoryDetailScreen extends ConsumerWidget {
               ...entry.rounds.asMap().entries.map((e) {
                 final i = e.key;
                 final r = e.value;
-                return _RoundCard(roundIndex: i, roundData: r, entry: entry);
+                return _RoundCard(
+                  roundIndex: i,
+                  roundData: r,
+                  entry: entry,
+                  expanded: _allExpanded,
+                );
               }),
             ],
           ],
@@ -213,10 +236,16 @@ class _RoundCard extends StatelessWidget {
   final Map<String, dynamic> roundData;
   final GameHistoryEntry entry;
 
+  /// État d'ouverture imposé par le bouton « tout déplier » de l'écran. La clé
+  /// intègre cette valeur pour recréer la tuile — donc réappliquer
+  /// `initiallyExpanded` — à chaque bascule globale.
+  final bool expanded;
+
   const _RoundCard({
     required this.roundIndex,
     required this.roundData,
     required this.entry,
+    required this.expanded,
   });
 
   @override
@@ -224,6 +253,8 @@ class _RoundCard extends StatelessWidget {
     final l = AppLocalizations.of(context);
     return Card(
       child: ExpansionTile(
+        key: ValueKey('round_${roundIndex}_$expanded'),
+        initiallyExpanded: expanded,
         title: Text(l.roundNumber(roundIndex + 1)),
         children: [
           Padding(
