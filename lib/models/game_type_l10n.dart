@@ -28,8 +28,8 @@ extension GameTypeL10n on GameType {
   /// Renvoie une chaîne vide pour les jeux pas encore documentés (le bouton
   /// d'info n'est alors pas affiché).
   String scoringExplanation(AppLocalizations l) => switch (this) {
-    GameType.skullKing => l.scoringSkullKing,
-    GameType.belote => l.scoringBelote,
+    GameType.skullKing => l.scoringHelpSkullKing,
+    GameType.belote => l.scoringHelpBelote,
     GameType.tichu => '',
     GameType.dameDepique => '',
     GameType.palet => '',
