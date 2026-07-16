@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../widgets/number_stepper.dart';
+import '../../widgets/signed_int_formatter.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 
@@ -216,9 +216,12 @@ class _SkResultScreenState extends ConsumerState<SkResultScreen> {
                                   width: 90,
                                   child: TextFormField(
                                     controller: _bonusControllers[player],
-                                    keyboardType: TextInputType.number,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          signed: true,
+                                        ),
                                     inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
+                                      SignedIntTextInputFormatter(),
                                     ],
                                     decoration: InputDecoration(
                                       labelText: l.bonus,

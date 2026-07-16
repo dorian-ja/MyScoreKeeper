@@ -14,6 +14,7 @@
   "scores": "Scores",
   "winner": "Vainqueur",
   "winnerLowest": "Vainqueur (moins de points)",
+  "tie": "Égalité",
 
   "rosterTitle": "Carnet de joueurs",
   "rosterSubtitle": "Couleurs et avatars des joueurs",

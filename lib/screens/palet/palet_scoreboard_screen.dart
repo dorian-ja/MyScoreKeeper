@@ -20,6 +20,7 @@ class PaletScoreboardScreen extends ConsumerWidget {
     if (state.phase == PaletPhase.setup) return const RedirectHome();
 
     final isFinished = state.phase == PaletPhase.finished;
+    final isDraw = state.teamATotal == state.teamBTotal;
     final aWins = state.teamATotal >= state.teamBTotal;
     final winner = aWins ? state.teamALabel : state.teamBLabel;
 
@@ -44,7 +45,11 @@ class PaletScoreboardScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (isFinished) ...[
-                      WinnerBanner(winner: winner, label: l.winner),
+                      WinnerBanner(
+                        winner: winner,
+                        label: isDraw ? l.tie : l.winner,
+                        isDraw: isDraw,
+                      ),
                       const SizedBox(height: 16),
                     ],
                     _TeamScoreCard(state: state),

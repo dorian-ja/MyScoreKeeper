@@ -8,7 +8,16 @@ class WinnerBanner extends StatefulWidget {
   final String winner;
   final String label;
 
-  const WinnerBanner({super.key, required this.winner, required this.label});
+  /// En cas d'égalité, on affiche une poignée de main et le seul [label]
+  /// (« Égalité ») sans désigner de vainqueur.
+  final bool isDraw;
+
+  const WinnerBanner({
+    super.key,
+    required this.winner,
+    required this.label,
+    this.isDraw = false,
+  });
 
   @override
   State<WinnerBanner> createState() => _WinnerBannerState();
@@ -37,7 +46,10 @@ class _WinnerBannerState extends State<WinnerBanner> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('🏆', style: TextStyle(fontSize: 32)),
+                Text(
+                  widget.isDraw ? '🤝' : '🏆',
+                  style: const TextStyle(fontSize: 32),
+                ),
                 const SizedBox(width: 12),
                 Flexible(
                   child: Column(
@@ -45,16 +57,23 @@ class _WinnerBannerState extends State<WinnerBanner> {
                     children: [
                       Text(
                         widget.label,
-                        style: TextStyle(color: scheme.onPrimaryContainer),
-                      ),
-                      Text(
-                        widget.winner,
                         style: TextStyle(
                           color: scheme.onPrimaryContainer,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                          fontSize: widget.isDraw ? 22 : 14,
+                          fontWeight: widget.isDraw
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
+                      if (!widget.isDraw)
+                        Text(
+                          widget.winner,
+                          style: TextStyle(
+                            color: scheme.onPrimaryContainer,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                     ],
                   ),
                 ),

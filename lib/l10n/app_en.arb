@@ -14,6 +14,7 @@
   "scores": "Scores",
   "winner": "Winner",
   "winnerLowest": "Winner (fewest points)",
+  "tie": "Tie",
 
   "rosterTitle": "Player roster",
   "rosterSubtitle": "Player colors and avatars",

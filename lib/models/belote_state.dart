@@ -238,16 +238,31 @@ class BeloteGameState {
     final annDef = preneurIsA ? annB : annA;
     final mult = r.coincheMultiplier;
 
+    // Un contrat Capot (250) ou Générale (500) ne peut se juger sur 162 points :
+    // il est réussi ⇔ le preneur remporte TOUS les plis (plisPre == 162, que le
+    // capot ait été coché ou saisi via 162 aux plis). Réussi, le preneur marque
+    // la valeur du contrat × mult ; chuté, la défense marque cette même valeur
+    // × mult (le preneur garde sa belote). Les contrats chiffrés (80..160) se
+    // jugent eux sur les points réalisés (plis + belote + annonces).
+    final isSpecialContract =
+        r.contract == kCoincheCapotContract ||
+        r.contract == kCoincheGeneraleContract;
     final realizedPre = plisPre + belotePre + annPre;
-    final made = realizedPre >= r.contract;
+    final made = isSpecialContract
+        ? plisPre == kBeloteTotalTrickPoints
+        : realizedPre >= r.contract;
 
     int preScore, defScore;
     if (made) {
-      preScore = (r.contract + plisPre) * mult + belotePre + annPre;
+      preScore = isSpecialContract
+          ? r.contract * mult + belotePre + annPre
+          : (r.contract + plisPre) * mult + belotePre + annPre;
       defScore = plisDef + beloteDef + annDef;
     } else {
       preScore = belotePre; // belote conservée même dedans
-      defScore = (160 + r.contract) * mult + beloteDef + annDef;
+      defScore = isSpecialContract
+          ? r.contract * mult + beloteDef + annDef
+          : (160 + r.contract) * mult + beloteDef + annDef;
     }
 
     return preneurIsA ? (preScore, defScore) : (defScore, preScore);

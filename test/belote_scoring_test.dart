@@ -123,6 +123,72 @@ void main() {
       // preneur = (100 + 90) × 1 + belote 20 = 210 ; défense = 72
       expect(coinche.roundScores(r), (210, 72));
     });
+
+    test('capot annoncé (250) et réussi : preneur marque 250', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamA,
+        contract: kCoincheCapotContract,
+        capot: BeloteTeam.teamA,
+      );
+      expect(coinche.roundScores(r), (250, 0));
+    });
+
+    test('capot réussi via 162 aux plis (sans cocher capot)', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamA,
+        contract: kCoincheCapotContract,
+        trickPointsA: kBeloteTotalTrickPoints,
+      );
+      expect(coinche.roundScores(r), (250, 0));
+    });
+
+    test('capot annoncé coinché ×2 et réussi : 500', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamA,
+        contract: kCoincheCapotContract,
+        capot: BeloteTeam.teamA,
+        coincheMultiplier: 2,
+      );
+      expect(coinche.roundScores(r), (500, 0));
+    });
+
+    test('capot annoncé mais chuté : défense marque 250', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamA,
+        contract: kCoincheCapotContract,
+        trickPointsA: 150, // pas tous les plis → chute
+      );
+      expect(coinche.roundScores(r), (0, 250));
+    });
+
+    test('générale annoncée (500) et réussie : preneur marque 500', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamB,
+        contract: kCoincheGeneraleContract,
+        capot: BeloteTeam.teamB,
+      );
+      expect(coinche.roundScores(r), (0, 500));
+    });
+
+    test('générale annoncée mais chutée : défense marque 500', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamA,
+        contract: kCoincheGeneraleContract,
+        trickPointsA: 100,
+      );
+      expect(coinche.roundScores(r), (0, 500));
+    });
+
+    test('preneur du capot garde sa belote même chuté', () {
+      final r = BeloteRoundData(
+        takingTeam: BeloteTeam.teamA,
+        contract: kCoincheCapotContract,
+        trickPointsA: 150,
+        belote: BeloteTeam.teamA,
+      );
+      // A chute mais conserve belote 20 ; B marque 250
+      expect(coinche.roundScores(r), (20, 250));
+    });
   });
 
   group('Totaux & fin de partie', () {
