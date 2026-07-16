@@ -67,20 +67,40 @@ class DdpScoreboardScreen extends ConsumerWidget {
                         rounds: [
                           for (final r in state.completedRounds) r.penalties,
                         ],
+                        markers: [
+                          for (final r in state.completedRounds)
+                            ddpRoundMarks(
+                              queenHolder: r.queenHolder,
+                              moonShooter: r.moonShooter,
+                              queenMark: l.ddpQueenMark,
+                              slamMark: l.ddpGrandSlamMark,
+                            ),
+                        ],
+                        legend: state.completedRounds.any(
+                              (r) =>
+                                  r.queenHolder != null || r.moonShooter != null,
+                            )
+                            ? l.ddpMarkLegend
+                            : null,
                         onEditRound: (i) async {
                           final notifier = ref.read(
                             dameDepiqueProvider.notifier,
                           );
+                          final previous = state.completedRounds[i];
                           final result = await showEditRoundDialog(
                             context: context,
                             title: l.roundNumber(i + 1),
                             players: state.players,
-                            initial: state.completedRounds[i].penalties,
+                            initial: previous.penalties,
                           );
                           if (result != null) {
                             notifier.editRound(
                               i,
-                              DdpRoundData(penalties: result),
+                              DdpRoundData(
+                                penalties: result,
+                                queenHolder: previous.queenHolder,
+                                moonShooter: previous.moonShooter,
+                              ),
                             );
                           }
                         },

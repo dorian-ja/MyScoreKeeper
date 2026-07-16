@@ -7,6 +7,13 @@ class RoundHistoryTable extends StatelessWidget {
   final List<String> players;
   final List<Map<String, int>> rounds;
 
+  /// Marqueur optionnel accolé au score d'un joueur pour une manche donnée
+  /// (`markers[roundIndex][player]`), p. ex. « * » ou « GC » à la Dame de Pique.
+  final List<Map<String, String>>? markers;
+
+  /// Légende optionnelle affichée sous le tableau pour expliquer [markers].
+  final String? legend;
+
   /// Si fourni, ajoute une colonne « crayon » permettant de corriger une
   /// manche déjà saisie (l'index de la manche est passé en argument).
   final void Function(int roundIndex)? onEditRound;
@@ -15,8 +22,17 @@ class RoundHistoryTable extends StatelessWidget {
     super.key,
     required this.players,
     required this.rounds,
+    this.markers,
+    this.legend,
     this.onEditRound,
   });
+
+  String _cellText(int roundIndex, String player, int value) {
+    final mark = markers != null && roundIndex < markers!.length
+        ? markers![roundIndex][player]
+        : null;
+    return mark != null ? '$value $mark' : '$value';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +63,9 @@ class RoundHistoryTable extends StatelessWidget {
                   return DataRow(
                     cells: [
                       DataCell(Text(l.roundShort(i + 1))),
-                      ...players.map((p) => DataCell(Text('${r[p] ?? 0}'))),
+                      ...players.map(
+                        (p) => DataCell(Text(_cellText(i, p, r[p] ?? 0))),
+                      ),
                       if (onEditRound != null)
                         DataCell(
                           IconButton(
@@ -63,6 +81,10 @@ class RoundHistoryTable extends StatelessWidget {
                 }).toList(),
               ),
             ),
+            if (legend != null) ...[
+              const SizedBox(height: 8),
+              Text(legend!, style: Theme.of(context).textTheme.bodySmall),
+            ],
           ],
         ),
       ),

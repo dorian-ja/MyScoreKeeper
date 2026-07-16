@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../models/belote_state.dart';
+import '../models/dame_de_pique_state.dart';
 import '../models/game_history.dart';
 import '../models/game_type.dart';
 import '../models/game_type_l10n.dart';
@@ -633,12 +634,21 @@ class _DdpRound extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final penalties = Map<String, int>.from(data['penalties'] as Map? ?? {});
+    final marks = ddpRoundMarks(
+      queenHolder: data['queenHolder'] as String?,
+      moonShooter: data['moonShooter'] as String?,
+      queenMark: l.ddpQueenMark,
+      slamMark: l.ddpGrandSlamMark,
+    );
     return Column(
       children: players.map((p) {
         final pts = penalties[p] ?? 0;
+        final mark = marks[p];
         return Row(
           children: [
-            Expanded(child: Text(p)),
+            Expanded(
+              child: Text(mark != null ? '$p  $mark' : p),
+            ),
             Text(
               l.points(pts),
               style: const TextStyle(fontWeight: FontWeight.bold),
