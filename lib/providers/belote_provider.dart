@@ -117,7 +117,15 @@ class BeloteNotifier extends StateNotifier<BeloteGameState> {
       playerOrTeamNames: [teamA, teamB],
       winner: aTotal >= bTotal ? teamA : teamB,
       finalScores: {teamA: aTotal, teamB: bTotal},
-      rounds: state.completedRounds.map((r) => r.toJson()).toList(),
+      // Points marqués par équipe à chaque donne + le mode (le calcul en dépend),
+      // figés pour que l'historique reste lisible sans recalcul.
+      rounds: state.completedRounds.map((r) {
+        final j = r.toJson();
+        j['teamAScore'] = state.roundTeamAScore(r);
+        j['teamBScore'] = state.roundTeamBScore(r);
+        j['mode'] = state.mode.name;
+        return j;
+      }).toList(),
     );
     await _ref.read(historyProvider.notifier).addEntry(entry);
   }

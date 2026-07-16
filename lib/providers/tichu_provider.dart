@@ -115,7 +115,14 @@ class TichuNotifier extends StateNotifier<TichuGameState> {
       playerOrTeamNames: [teamA, teamB],
       winner: aTotal >= bTotal ? teamA : teamB,
       finalScores: {teamA: aTotal, teamB: bTotal},
-      rounds: state.completedRounds.map((r) => r.toJson()).toList(),
+      // Points marqués par équipe à chaque manche (annonces incluses), figés
+      // pour l'historique.
+      rounds: state.completedRounds.map((r) {
+        final j = r.toJson();
+        j['teamAScore'] = state.roundTeamAScore(r);
+        j['teamBScore'] = state.roundTeamBScore(r);
+        return j;
+      }).toList(),
     );
     await _ref.read(historyProvider.notifier).addEntry(entry);
   }

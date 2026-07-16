@@ -135,7 +135,16 @@ class SkullKingNotifier extends StateNotifier<SkGameState> {
       playerOrTeamNames: state.players,
       winner: ranked.first,
       finalScores: scores,
-      rounds: state.completedRounds.map((r) => r.toJson()).toList(),
+      // On fige les points marqués par joueur à chaque manche (dépendants du
+      // mode de score) pour que l'historique reste lisible sans recalcul.
+      rounds: state.completedRounds.map((r) {
+        final j = r.toJson();
+        j['scores'] = {
+          for (final p in state.players) p: r.scoreForPlayer(p, state.scoringMode),
+        };
+        j['scoringMode'] = state.scoringMode.name;
+        return j;
+      }).toList(),
     );
     await _ref.read(historyProvider.notifier).addEntry(entry);
   }
