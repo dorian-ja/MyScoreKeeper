@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/game_type.dart';
 import '../../models/tichu_state.dart';
 import '../../providers/tichu_provider.dart';
 import '../../theme.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/scoreboard_actions.dart';
+import '../../widgets/scoring_info_button.dart';
 import '../../widgets/winner_banner.dart';
 
 class TichuScoreboardScreen extends ConsumerWidget {
@@ -38,6 +40,7 @@ class TichuScoreboardScreen extends ConsumerWidget {
               context.go('/');
             },
           ),
+          actions: const [ScoringInfoButton(gameType: GameType.tichu)],
         ),
         body: SafeArea(
           child: Column(

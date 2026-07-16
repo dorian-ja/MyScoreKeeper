@@ -30,10 +30,10 @@ extension GameTypeL10n on GameType {
   String scoringExplanation(AppLocalizations l) => switch (this) {
     GameType.skullKing => l.scoringHelpSkullKing,
     GameType.belote => l.scoringHelpBelote,
-    GameType.tichu => '',
-    GameType.dameDepique => '',
-    GameType.palet => '',
-    GameType.molkky => '',
+    GameType.tichu => l.scoringHelpTichu,
+    GameType.dameDepique => l.scoringHelpDameDePique,
+    GameType.palet => l.scoringHelpPalet,
+    GameType.molkky => l.scoringHelpMolkky,
     GameType.autre => '',
   };
 }
