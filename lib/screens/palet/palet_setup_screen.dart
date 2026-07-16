@@ -33,7 +33,7 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
     _maxTeamSize * 2,
     (i) => TextEditingController(),
   );
-  final _targetCtrl = TextEditingController(text: '500');
+  final _targetCtrl = TextEditingController(text: '12');
 
   @override
   void dispose() {
@@ -55,7 +55,7 @@ class _PaletSetupScreenState extends ConsumerState<PaletSetupScreen> {
     if (!ensureUniqueNames(context, players)) return;
     PlayerNamesStore.save('${GameType.palet.name}_${_mode.name}', rawNames);
     ref.read(rosterProvider.notifier).registerNames(rawNames);
-    final target = int.tryParse(_targetCtrl.text) ?? 500;
+    final target = int.tryParse(_targetCtrl.text) ?? 12;
     ref
         .read(paletProvider.notifier)
         .startGame(players, target, _mode, _teamSize);

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/dame_de_pique_state.dart';
+import '../../models/game_type.dart';
 import '../../providers/dame_de_pique_provider.dart';
 import '../../widgets/edit_round_dialog.dart';
 import '../../widgets/quit_game_button.dart';
@@ -10,6 +11,7 @@ import '../../widgets/redirect_home.dart';
 import '../../widgets/round_history_table.dart';
 import '../../widgets/score_evolution_chart.dart';
 import '../../widgets/scoreboard_actions.dart';
+import '../../widgets/scoring_info_button.dart';
 import '../../widgets/winner_banner.dart';
 
 class DdpScoreboardScreen extends ConsumerWidget {
@@ -38,6 +40,7 @@ class DdpScoreboardScreen extends ConsumerWidget {
               context.go('/');
             },
           ),
+          actions: const [ScoringInfoButton(gameType: GameType.dameDepique)],
         ),
         body: SafeArea(
           child: Column(

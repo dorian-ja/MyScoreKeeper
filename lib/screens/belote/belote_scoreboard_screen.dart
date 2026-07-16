@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/belote_state.dart';
+import '../../models/game_type.dart';
 import '../../providers/belote_provider.dart';
 import '../../theme.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/scoreboard_actions.dart';
+import '../../widgets/scoring_info_button.dart';
 import '../../widgets/winner_banner.dart';
 
 class BeloteScoreboardScreen extends ConsumerWidget {
@@ -36,6 +38,7 @@ class BeloteScoreboardScreen extends ConsumerWidget {
               context.go('/');
             },
           ),
+          actions: const [ScoringInfoButton(gameType: GameType.belote)],
         ),
         body: SafeArea(
           child: Column(

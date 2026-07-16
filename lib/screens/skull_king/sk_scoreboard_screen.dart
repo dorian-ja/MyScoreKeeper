@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/game_type.dart';
 import '../../models/skull_king_state.dart';
 import '../../providers/skull_king_provider.dart';
 import '../../widgets/quit_game_button.dart';
 import '../../widgets/redirect_home.dart';
 import '../../widgets/scoreboard_actions.dart';
+import '../../widgets/scoring_info_button.dart';
 import '../../widgets/winner_banner.dart';
 
 class SkScoreboardScreen extends ConsumerWidget {
@@ -37,6 +39,7 @@ class SkScoreboardScreen extends ConsumerWidget {
               context.go('/');
             },
           ),
+          actions: const [ScoringInfoButton(gameType: GameType.skullKing)],
         ),
         body: SafeArea(
           child: Column(
